@@ -288,7 +288,7 @@ module ID(
     assign sel_alu_src1[0] = inst_add|inst_addi|inst_addu|inst_addiu|
                              inst_sub|inst_subu|
                              inst_slt|inst_slti|inst_sltu|inst_sltiu|
-                             inst_and|inst_andi|inst_or|inst_ori|inst_xor|inst_xori|
+                             inst_and|inst_andi|inst_nor|inst_or|inst_ori|inst_xor|inst_xori|
                              inst_sllv|inst_srav|inst_srlv;
 
     // pc to reg1
@@ -386,9 +386,25 @@ module ID(
     assign pc_plus_4 = id_pc + 32'h4;
 
     assign rs_eq_rt = (rdata1 == rdata2);
+    assign rs_ge_z  = (rdata1 >= 0);
+    assign rs_gt_z  = (rdata1 >  0);
+    assign rs_le_z  = (rdata1 <= 0);
+    assign rs_lt_z  = (rdata1 <  0);
 
-    assign br_e = inst_beq & rs_eq_rt;
-    assign br_addr = inst_beq ? (pc_plus_4 + {{14{inst[15]}},inst[15:0],2'b0}) : 32'b0;
+    assign br_e = inst_beq & rs_eq_rt|
+                  inst_bne & !rs_eq_rt|
+                  (inst_bgez|inst_bgezal) & rs_ge_z|
+                  inst_bgtz & rs_gt_z|
+                  inst_blez & rs_le_z|
+                  (inst_bltz|inst_bltzal) & rs_lt_z|
+                  inst_j|inst_jal|inst_jr|inst_jalr;
+    assign br_addr = inst_beq|inst_bne|inst_bgez|inst_bgtz|inst_blez|inst_bltz|inst_bgezal|inst_bltzal ?
+                     (pc_plus_4 + {{14{inst[15]}},inst[15:0],2'b0}) : 
+                     inst_j|inst_jal ?
+                     {pc_plus_4[31:28],instr_index,2'b0} :
+                     inst_jr|inst_jalr ?
+                     /*rs寄存器中的值*/ :
+                     32'b0;
 
     assign br_bus = {
         br_e,
