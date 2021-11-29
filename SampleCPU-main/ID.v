@@ -293,8 +293,8 @@ module ID(
     assign inst_mfc0    = op_d[6'b01_0000]&rs_d[5'b0_0000];
     assign inst_mtc0    = op_d[6'b01_0000]&rs_d[5'b0_0100];
     //Siri
-
-    assign id_pc_plus8 = id_pc+32'h8;
+     wire [31:0] pc_plus_8;
+    assign pc_plus_8 = id_pc+32'h8;
     wire  [31:0] idc1;
     wire [31:0] idc2;
     regfile u1_regfile(
@@ -305,7 +305,7 @@ module ID(
         .rdata2 (idc2 ),
         .we     (1'b0     ),
         .waddr  (5'b11111  ),
-        .wdata  (id_pc_plus8  )
+        .wdata  (pc_plus_8  )
     );  
 
     // rs to reg1
@@ -440,7 +440,7 @@ module ID(
     assign br_addr = inst_beq|inst_bne|inst_bgez|inst_bgtz|inst_blez|inst_bltz|inst_bgezal|inst_bltzal ?
                      (pc_plus_4 + {{14{inst[15]}},inst[15:0],2'b0}) : 
                      inst_j|inst_jal ?
-                     {pc_plus_4[31:28],instr_index,2'b0} :
+                     {id_pc[31:28],instr_index,2'b0} :   //   id_pc
                      inst_jr|inst_jalr ?
                      rdata1 :
                      32'b0;
