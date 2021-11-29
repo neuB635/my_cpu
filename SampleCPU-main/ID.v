@@ -384,12 +384,9 @@ module ID(
                 |inst_sllv|inst_sll  //逻辑左移
                 |inst_srav|inst_sra  //算术右移
                 | inst_srlv|inst_srl  //逻辑右移
-                |inst_bne  //不等跳转
-                |inst_bgez|inst_bgtz  //大于（&？等于）0跳转
-                |inst_blez|inst_bltz  //小于（&？等于）0跳转
                 |inst_bgezal  //大于等于0跳转，并保存pc值至通用寄存器
                 |inst_bltzal  //小于0跳转，并保存pc值至通用寄存器
-                |inst_j|inst_jal|inst_jr|inst_jalr;  //无条件跳转
+                |inst_jal|inst_jalr;  //无条件跳转
     // store in [rd]
     assign sel_rf_dst[0] = inst_add|inst_addu|
                            inst_sub|inst_subu|
