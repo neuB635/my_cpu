@@ -376,10 +376,20 @@ module ID(
 
 
     // regfile store enable
-    assign rf_we = inst_ori | inst_lui | inst_addiu | inst_subu;
-
-
-
+    assign rf_we = inst_ori|inst_lui| inst_addiu | inst_beq
+                |inst_add|inst_addi|inst_addu
+                |inst_sub|inst_subu
+                | inst_slt|inst_slti|inst_sltu|inst_sltiu
+                |inst_and|inst_andi|inst_nor|inst_or|inst_xor|inst_xori
+                |inst_sllv|inst_sll  //逻辑左移
+                |inst_srav|inst_sra  //算术右移
+                | inst_srlv|inst_srl  //逻辑右移
+                |inst_bne  //不等跳转
+                |inst_bgez|inst_bgtz  //大于（&？等于）0跳转
+                |inst_blez|inst_bltz  //小于（&？等于）0跳转
+                |inst_bgezal  //大于等于0跳转，并保存pc值至通用寄存器
+                |inst_bltzal  //小于0跳转，并保存pc值至通用寄存器
+                |inst_j|inst_jal|inst_jr|inst_jalr;  //无条件跳转
     // store in [rd]
     assign sel_rf_dst[0] = inst_add|inst_addu|
                            inst_sub|inst_subu|
@@ -440,7 +450,7 @@ module ID(
     assign br_addr = inst_beq|inst_bne|inst_bgez|inst_bgtz|inst_blez|inst_bltz|inst_bgezal|inst_bltzal ?
                      (pc_plus_4 + {{14{inst[15]}},inst[15:0],2'b0}) : 
                      inst_j|inst_jal ?
-                     {id_pc[31:28],instr_index,2'b0} :   //   id_pc
+                     {pc_plus_4[31:28],instr_index,2'b0} :   //   id_pc
                      inst_jr|inst_jalr ?
                      rdata1 :
                      32'b0;
@@ -448,6 +458,7 @@ module ID(
         br_e,//是否执行相等的跳转
         br_addr//跳转位置
     };
-    
+      
 
 endmodule
+
