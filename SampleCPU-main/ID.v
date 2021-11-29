@@ -22,7 +22,13 @@ module ID(
 
     output wire [`ID_TO_EX_WD-1:0] id_to_ex_bus,
 
-    output wire [`BR_WD-1:0] br_bus
+    output wire [`BR_WD-1:0] br_bus,
+
+    //Siri
+    input wire is_in_delayslot_i,
+    output wire is_in_delayslot_o,
+    output wire next_inst_in_delayslot_o
+
 
 );
     
@@ -145,11 +151,11 @@ module ID(
         .rdata1 (rdata1_1 ),
         .raddr2 (rt ),
         .rdata2 (rdata2_1 ),
-        .we     (we    ),
-        .waddr  (waddr ),
-        .wdata  (wdata  )
+        .we     (wb_rf_we     ),
+        .waddr  (wb_rf_waddr  ),
+        .wdata  (wb_rf_wdata  )
     ); 
-   
+     
     assign rdata1 = (ce == 1'b0) ? 32'b0 : ((ex_to_rf_we == 1'b1 ) && (ex_to_rf_waddr==rs)) ? 
                         ex_to_rf_wdata :((mem_to_rf_we == 1'b1) && (mem_to_rf_waddr==rs))? mem_to_rf_wdata : rdata1_1 ;
     assign rdata2 = (ce == 1'b0) ? 32'b0 : ((ex_to_rf_we == 1'b1 ) && (ex_to_rf_waddr==rt)) ? 
@@ -293,11 +299,20 @@ module ID(
     assign inst_mfc0    = op_d[6'b01_0000]&rs_d[5'b0_0000];
     assign inst_mtc0    = op_d[6'b01_0000]&rs_d[5'b0_0100];
     //Siri
-     //wire [31:0] pc_plus_8;
-    //assign pc_plus_8 = id_pc+32'h8;
-    //wire  [31:0] idc1;
-    //wire [31:0] idc2;
 
+    assign id_pc_plus8 = id_pc+32'h8;
+    wire  [31:0] idc1;
+    wire [31:0] idc2;
+    // regfile u1_regfile(
+    // 	.clk    (clk    ),
+    //     .raddr1 (5'b0 ),
+    //     .rdata1 ( idc1),
+    //     .raddr2 (5'b0 ),
+    //     .rdata2 (idc2 ),
+    //     .we     (1'b0     ),
+    //     .waddr  (5'b11111  ),
+    //     .wdata  (id_pc_plus8  )
+    // );  
 
     // rs to reg1
     assign sel_alu_src1[0] = inst_add|inst_addi|inst_addu|inst_addiu|
@@ -308,15 +323,14 @@ module ID(
                              inst_jr;//除了第一行都是新加的
 
     // pc to reg1
-    assign sel_alu_src1[1] = 1'b0;
+    assign sel_alu_src1[1] = inst_jal;
     
 
     // sa_zero_extend to reg1
     assign sel_alu_src1[2] = 1'b0;
    
-    //assign rdata1 = (sel_alu_src1[0]==1'b1)? rdata1_2:(sel_alu_src1[1]==1'b1)?{{16{offset[15]}},offset}:32'b0;//reg1_o
     
-    // rt to reg
+    // rt to reg2
     assign sel_alu_src2[0] = inst_add|inst_addi|inst_addu|
                              inst_sub|inst_subu|
                              inst_slt|inst_sltu|inst_sltiu|
@@ -329,17 +343,17 @@ module ID(
     
     
 
-    // 32'b8 to reg2
-    assign sel_alu_src2[2] = 1'b0;
+    // 32'h8 to reg2
+    assign sel_alu_src2[2] = inst_jal;
     
 
     // imm_zero_extend to reg2
     assign sel_alu_src2[3] = inst_ori|inst_andi|inst_xori;
 
-    //assign rdata2 = sel_alu_src2[0] == 1'b1 ? rdata2_2 : sel_alu_src2[1] == 1'b1 ? {{16{imm[15]}},imm}:sel_alu_src2[3] == 1'b1 ?{{16{1'b0}},imm}:32'b0;//reg2_o
 
 
-    assign op_add = inst_addiu|inst_add|inst_addi|inst_addu|inst_jal;
+    assign op_add = inst_addiu|inst_add|inst_addi|inst_addu
+                    |inst_jal;
     assign op_sub = inst_sub|inst_subu;
     assign op_slt = inst_slt|inst_slti;
     assign op_sltu = inst_sltiu|inst_sltu;
@@ -367,28 +381,10 @@ module ID(
 
 
     // regfile store enable
+    assign rf_we = inst_ori | inst_lui | inst_addiu | inst_subu|inst_jal|inst_addu|inst_sll;
 
 
-    /////
 
-    assign we = wb_rf_we;
-    assign waddr = wb_rf_waddr;
-    assign wdata = wb_rf_wdata;
-    wire al_we;
-    assign al_we = inst_jal|inst_jalr|inst_bgezal|inst_bltzal;
-    /////
-
-    assign rf_we = inst_ori|inst_lui| inst_addiu | inst_beq
-                |inst_add|inst_addi|inst_addu
-                |inst_sub|inst_subu
-                | inst_slt|inst_slti|inst_sltu|inst_sltiu
-                |inst_and|inst_andi|inst_nor|inst_or|inst_xor|inst_xori
-                |inst_sllv|inst_sll  //逻辑左移
-                |inst_srav|inst_sra  //算术右移
-                | inst_srlv|inst_srl  //逻辑右移
-                |inst_bgezal  //大于等于0跳转，并保存pc值至通用寄存器
-                |inst_bltzal  //小于0跳转，并保存pc值至通用寄存器
-                |inst_jal|inst_jalr;  //无条件跳转
     // store in [rd]
     assign sel_rf_dst[0] = inst_add|inst_addu|
                            inst_sub|inst_subu|
@@ -449,7 +445,7 @@ module ID(
     assign br_addr = inst_beq|inst_bne|inst_bgez|inst_bgtz|inst_blez|inst_bltz|inst_bgezal|inst_bltzal ?
                      (pc_plus_4 + {{14{inst[15]}},inst[15:0],2'b0}) : 
                      inst_j|inst_jal ?
-                     {pc_plus_4[31:28],instr_index,2'b0} :   //   id_pc
+                     {pc_plus_4[31:28],instr_index,2'b0} :
                      inst_jr|inst_jalr ?
                      rdata1 :
                      32'b0;
@@ -457,21 +453,6 @@ module ID(
         br_e,//是否执行相等的跳转
         br_addr//跳转位置
     };
-    ////
-    // wire [31:0]fault_rdata1;
-    // wire [31:0]fault_rdata_2;
     
-    // regfile jal_regfile(
-    // 	.clk    (clk    ),
-    //     .raddr1 (rs ),
-    //     .rdata1 (fault_rdata1 ),
-    //     .raddr2 (rt ),
-    //     .rdata2 (fault_rdata_2 ),
-    //     .we     (al_we    ),
-    //     .waddr  (5'b1_1111 ),
-    //     .wdata  (id_pc + 32'd8 )
-    // ); 
-    /// 
 
 endmodule
-
