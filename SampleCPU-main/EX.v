@@ -14,6 +14,7 @@ module EX(
     output wire [31:0] data_sram_addr,
     output wire [31:0] data_sram_wdata,
     output wire [`EX_TO_RF_BUS-1:0] ex_to_rf_bus//Siri
+    
 );
 
     reg [`ID_TO_EX_WD-1:0] id_to_ex_bus_r;
@@ -82,7 +83,7 @@ module EX(
         .alu_result  (alu_result  )
     );
 
-    assign ex_result = alu_result;
+    assign ex_result = (alu_op===12'b0)?alu_src1:alu_result;
 
     assign ex_to_mem_bus = {
         ex_pc,          // 75:44

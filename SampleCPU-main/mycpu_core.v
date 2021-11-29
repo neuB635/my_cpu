@@ -29,9 +29,11 @@ module mycpu_core(
     wire [`DATA_SRAM_WD-1:0] ex_dt_sram_bus;
     wire [`WB_TO_RF_WD-1:0] wb_to_rf_bus;
     wire [`StallBus-1:0] stall;
-
-    wire [`EX_TO_RF_BUS-1:0] ex_to_rf_bus;//Siri
-    wire [`MEM_TO_RF_BUS-1:0] mem_to_rf_bus;//Siri
+    //Siri
+    wire [`EX_TO_RF_BUS-1:0] ex_to_rf_bus;
+    wire [`MEM_TO_RF_BUS-1:0] mem_to_rf_bus;
+    wire stallreq_for_ex;
+    wire stallreq_for_load;
 
     IF u_IF(
     	.clk             (clk             ),
@@ -97,6 +99,8 @@ module mycpu_core(
 
     CTRL u_CTRL(
     	.rst   (rst   ),
+        //.stallreq_for_ex    (stallreq_for_ex),//Siri
+        //.stallreq_for_load  (stallreq_for_load),//Siri
         .stall (stall )
     );
     

@@ -27,6 +27,9 @@ module MEM(
         else if (stall[3]==`NoStop) begin
             ex_to_mem_bus_r <= ex_to_mem_bus;
         end
+        // else begin
+        //     pass;
+        // end
     end
 
     wire [31:0] mem_pc;
@@ -40,7 +43,7 @@ module MEM(
     wire [31:0] mem_result;
 
     assign {
-        mem_pc,         // 75:44
+        mem_pc,         // 75:44                                                                                                                                              
         data_ram_en,    // 43
         data_ram_wen,   // 42:39
         sel_rf_res,     // 38
@@ -48,6 +51,8 @@ module MEM(
         rf_waddr,       // 36:32
         ex_result       // 31:0
     } =  ex_to_mem_bus_r;
+
+    
 
 
 
