@@ -83,7 +83,8 @@ module EX(
         .alu_result  (alu_result  )
     );
 
-    assign ex_result = (alu_op===12'b0)?alu_src1:alu_result;
+    assign ex_result = (alu_op===12'b0)?alu_src1:
+                       (ex_pc[31:26] == 6'b00_0011)? (ex_pc + 32'd8):alu_result;
 
     assign ex_to_mem_bus = {
         ex_pc,          // 75:44

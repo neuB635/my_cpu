@@ -145,11 +145,11 @@ module ID(
         .rdata1 (rdata1_1 ),
         .raddr2 (rt ),
         .rdata2 (rdata2_1 ),
-        .we     (wb_rf_we     ),
-        .waddr  (wb_rf_waddr  ),
-        .wdata  (wb_rf_wdata  )
+        .we     (we    ),
+        .waddr  (waddr ),
+        .wdata  (wdata  )
     ); 
-     
+   
     assign rdata1 = (ce == 1'b0) ? 32'b0 : ((ex_to_rf_we == 1'b1 ) && (ex_to_rf_waddr==rs)) ? 
                         ex_to_rf_wdata :((mem_to_rf_we == 1'b1) && (mem_to_rf_waddr==rs))? mem_to_rf_wdata : rdata1_1 ;
     assign rdata2 = (ce == 1'b0) ? 32'b0 : ((ex_to_rf_we == 1'b1 ) && (ex_to_rf_waddr==rt)) ? 
@@ -293,20 +293,11 @@ module ID(
     assign inst_mfc0    = op_d[6'b01_0000]&rs_d[5'b0_0000];
     assign inst_mtc0    = op_d[6'b01_0000]&rs_d[5'b0_0100];
     //Siri
-     wire [31:0] pc_plus_8;
-    assign pc_plus_8 = id_pc+32'h8;
-    wire  [31:0] idc1;
-    wire [31:0] idc2;
-    regfile u1_regfile(
-    	.clk    (clk    ),
-        .raddr1 (5'b0 ),
-        .rdata1 ( idc1),
-        .raddr2 (5'b0 ),
-        .rdata2 (idc2 ),
-        .we     (1'b0     ),
-        .waddr  (5'b11111  ),
-        .wdata  (pc_plus_8  )
-    );  
+     //wire [31:0] pc_plus_8;
+    //assign pc_plus_8 = id_pc+32'h8;
+    //wire  [31:0] idc1;
+    //wire [31:0] idc2;
+
 
     // rs to reg1
     assign sel_alu_src1[0] = inst_add|inst_addi|inst_addu|inst_addiu|
@@ -348,7 +339,7 @@ module ID(
     //assign rdata2 = sel_alu_src2[0] == 1'b1 ? rdata2_2 : sel_alu_src2[1] == 1'b1 ? {{16{imm[15]}},imm}:sel_alu_src2[3] == 1'b1 ?{{16{1'b0}},imm}:32'b0;//reg2_o
 
 
-    assign op_add = inst_addiu|inst_add|inst_addi|inst_addu;
+    assign op_add = inst_addiu|inst_add|inst_addi|inst_addu|inst_jal;
     assign op_sub = inst_sub|inst_subu;
     assign op_slt = inst_slt|inst_slti;
     assign op_sltu = inst_sltiu|inst_sltu;
@@ -376,6 +367,17 @@ module ID(
 
 
     // regfile store enable
+
+
+    /////
+
+    assign we = wb_rf_we;
+    assign waddr = wb_rf_waddr;
+    assign wdata = wb_rf_wdata;
+    wire al_we;
+    assign al_we = inst_jal|inst_jalr|inst_bgezal|inst_bltzal;
+    /////
+
     assign rf_we = inst_ori|inst_lui| inst_addiu | inst_beq
                 |inst_add|inst_addi|inst_addu
                 |inst_sub|inst_subu
@@ -455,7 +457,21 @@ module ID(
         br_e,//是否执行相等的跳转
         br_addr//跳转位置
     };
-      
+    ////
+    // wire [31:0]fault_rdata1;
+    // wire [31:0]fault_rdata_2;
+    
+    // regfile jal_regfile(
+    // 	.clk    (clk    ),
+    //     .raddr1 (rs ),
+    //     .rdata1 (fault_rdata1 ),
+    //     .raddr2 (rt ),
+    //     .rdata2 (fault_rdata_2 ),
+    //     .we     (al_we    ),
+    //     .waddr  (5'b1_1111 ),
+    //     .wdata  (id_pc + 32'd8 )
+    // ); 
+    /// 
 
 endmodule
 
