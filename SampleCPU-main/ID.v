@@ -328,14 +328,14 @@ module ID(
     
 
     // sa_zero_extend to reg1
-    assign sel_alu_src1[2] = 1'b0;
+    assign sel_alu_src1[2] = inst_sll;
    
     
     // rt to reg2
     assign sel_alu_src2[0] = inst_add|inst_addi|inst_addu|
                              inst_sub|inst_subu|
                              inst_slt|inst_sltu|inst_sltiu|
-                             inst_and|inst_nor|inst_or|inst_xor;
+                             inst_and|inst_nor|inst_or|inst_xor|inst_sll;
     
     // imm_sign_extend to reg2
     assign sel_alu_src2[1] = inst_lui | inst_addiu|
@@ -400,7 +400,7 @@ module ID(
     assign sel_rf_dst[0] = inst_add|inst_addu|
                            inst_sub|inst_subu|
                            inst_slt|inst_sltu|
-                           inst_and|inst_nor|inst_or|inst_xor|inst_jal;
+                           inst_and|inst_nor|inst_or|inst_xor|inst_jal|inst_sll;
     // store in [rt] 
     assign sel_rf_dst[1] = inst_ori | inst_lui | inst_addiu|
                            inst_slti|inst_sltiu|inst_andi|inst_ori|inst_xori;
