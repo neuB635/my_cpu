@@ -312,7 +312,7 @@ module ID(
     
 
     // sa_zero_extend to reg1
-    assign sel_alu_src1[2] = 1'b0;
+    assign sel_alu_src1[2] = inst_sll;
    
     //assign rdata1 = (sel_alu_src1[0]==1'b1)? rdata1_2:(sel_alu_src1[1]==1'b1)?{{16{offset[15]}},offset}:32'b0;//reg1_o
     
@@ -320,7 +320,8 @@ module ID(
     assign sel_alu_src2[0] = inst_add|inst_addi|inst_addu|
                              inst_sub|inst_subu|
                              inst_slt|inst_sltu|inst_sltiu|
-                             inst_and|inst_nor|inst_or|inst_xor;
+                             inst_and|inst_nor|inst_or|inst_xor|
+                             inst_sll;
     
     // imm_sign_extend to reg2
     assign sel_alu_src2[1] = inst_lui | inst_addiu|
@@ -367,6 +368,21 @@ module ID(
 
 
     // regfile store enable
+<<<<<<< Updated upstream
+=======
+    assign rf_we = inst_ori|inst_lui| inst_addiu | inst_beq
+                |inst_add|inst_addi|inst_addu
+                |inst_sub|inst_subu
+                | inst_slt|inst_slti|inst_sltu|inst_sltiu
+                |inst_and|inst_andi|inst_nor|inst_or|inst_xor|inst_xori
+                |inst_sllv|inst_sll  //逻辑左移
+                |inst_srav|inst_sra  //算术右移
+                | inst_srlv|inst_srl  //逻辑右移
+                |inst_bgezal  //大于等于0跳转，并保存pc值至通用寄存器
+                |inst_bltzal  //小于0跳转，并保存pc值至通用寄存器
+                |inst_jal|inst_jalr;  //无条件跳转
+
+>>>>>>> Stashed changes
 
 
     /////
@@ -393,7 +409,8 @@ module ID(
     assign sel_rf_dst[0] = inst_add|inst_addu|
                            inst_sub|inst_subu|
                            inst_slt|inst_sltu|
-                           inst_and|inst_nor|inst_or|inst_xor;
+                           inst_and|inst_nor|inst_or|inst_xor|
+                           inst_sll;
     // store in [rt] 
     assign sel_rf_dst[1] = inst_ori | inst_lui | inst_addiu|
                            inst_slti|inst_sltiu|inst_andi|inst_ori|inst_xori;
