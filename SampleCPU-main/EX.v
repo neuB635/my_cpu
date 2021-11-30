@@ -44,7 +44,7 @@ module EX(
     wire [4:0] rf_waddr;
     wire sel_rf_res;
     wire [31:0] rf_rdata1, rf_rdata2;
-    reg is_in_delayslot;
+    //reg is_in_delayslot;
 
     assign {
         ex_pc,          // 148:117
@@ -73,7 +73,7 @@ module EX(
                       sel_alu_src1[2] ? sa_zero_extend : rf_rdata1;
 
     assign alu_src2 = sel_alu_src2[1] ? imm_sign_extend :
-                      sel_alu_src2[2] ? 32'd8 :
+                      sel_alu_src2[2] ? 32'h8 :
                       sel_alu_src2[3] ? imm_zero_extend : rf_rdata2;
     
     alu u_alu(
@@ -83,8 +83,7 @@ module EX(
         .alu_result  (alu_result  )
     );
 
-    assign ex_result = (alu_op===12'b0)?alu_src1:
-                       (ex_pc[31:26] == 6'b00_0011)? (ex_pc + 32'd8):alu_result;
+    assign ex_result = (alu_op===12'b0)?alu_src1:alu_result;
 
     assign ex_to_mem_bus = {
         ex_pc,          // 75:44
