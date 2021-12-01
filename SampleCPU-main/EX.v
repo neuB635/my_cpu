@@ -13,29 +13,24 @@ module EX(
     output wire [3:0] data_sram_wen,
     output wire [31:0] data_sram_addr,
     output wire [31:0] data_sram_wdata,
-    output wire [`EX_TO_RF_BUS-1:0] ex_to_rf_bus,//Siri
-    ///
-    input wire [32:0] delay_ex
-    ///
+    output wire [`EX_TO_RF_BUS-1:0] ex_to_rf_bus//Siri
+    
 );
 
     reg [`ID_TO_EX_WD-1:0] id_to_ex_bus_r;
-    reg [32:0] delay_ex_r;
+
     always @ (posedge clk) begin
         if (rst) begin
             id_to_ex_bus_r <= `ID_TO_EX_WD'b0;
-            delay_ex_r <=33'b0;
         end
         // else if (flush) begin
         //     id_to_ex_bus_r <= `ID_TO_EX_WD'b0;
         // end
         else if (stall[2]==`Stop && stall[3]==`NoStop) begin
             id_to_ex_bus_r <= `ID_TO_EX_WD'b0;
-            delay_ex_r <=33'b0;
         end
         else if (stall[2]==`NoStop) begin
             id_to_ex_bus_r <= id_to_ex_bus;
-            delay_ex_r<=delay_ex;
         end
     end
 
@@ -43,8 +38,8 @@ module EX(
     wire [11:0] alu_op;
     wire [2:0] sel_alu_src1;
     wire [3:0] sel_alu_src2;
-    // wire data_sram_en;         //
-    // wire [3:0] data_sram_wen;  //
+    wire data_ram_en;
+    wire [3:0] data_ram_wen;
     wire rf_we;
     wire [4:0] rf_waddr;
     wire sel_rf_res;
@@ -57,8 +52,8 @@ module EX(
         alu_op,         // 84:83
         sel_alu_src1,   // 82:80
         sel_alu_src2,   // 79:76
-        data_sram_en,    // 75
-        data_sram_wen,   // 74:71
+        data_ram_en,    // 75
+        data_ram_wen,   // 74:71
         rf_we,          // 70
         rf_waddr,       // 69:65
         sel_rf_res,     // 64
@@ -87,34 +82,16 @@ module EX(
         .alu_src2    (alu_src2    ),
         .alu_result  (alu_result  )
     );
-    ////
-    wire is_delay_slot_i;
-    wire [31:0] link_address_o;  ///*****************************
-   
-    // wire [5:0]ld_and_st_op;
-    assign 
-    { 
-    is_delay_slot_i,
-    link_address_o
-    }=delay_ex_r;
-    
-    wire [5:0] lw_sw_op; //lw_sw的前六位指令
-    assign lw_sw_op=data_sram_en? inst[31:26]:6'b000000;
-    assign data_sram_addr=data_sram_en? rf_rdata1+{{16{inst[15]}},inst[15:0]}:32'b0;
-    assign data_sram_wdata=data_sram_en?rf_rdata2:32'b0;
-    assign ex_result =is_delay_slot_i ? link_address_o:data_sram_en?data_sram_wdata:alu_result;
-    ////
-    
-    // assign ex_result = (alu_op===12'b0)?alu_src1: data_sram_en? data_sram_wdata : alu_result;
 
-     assign ex_to_mem_bus = {
-        ex_pc,          // 81:50
-        data_sram_en,    // 49
-        data_sram_wen,   // 48:45
-        sel_rf_res,     // 44
-        rf_we,          // 43
-        rf_waddr,       // 42:38
-        lw_sw_op,   // 37:32
+    assign ex_result = (alu_op===12'b0)?alu_src1:alu_result;
+
+    assign ex_to_mem_bus = {
+        ex_pc,          // 75:44
+        data_ram_en,    // 43
+        data_ram_wen,   // 42:39
+        sel_rf_res,     // 38
+        rf_we,          // 37
+        rf_waddr,       // 36:32
         ex_result       // 31:0
     };
 
@@ -128,7 +105,6 @@ module EX(
     assign ex_to_rf_bus={
         ex_to_rf_we,
         ex_to_rf_waddr,
-        lw_sw_op,
         ex_to_rf_wdata
     };
     //Siri
