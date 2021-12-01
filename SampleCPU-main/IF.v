@@ -35,6 +35,9 @@ module IF(
         else if (stall[0]==`NoStop) begin
             pc_reg <= next_pc;
         end
+        else if (stall[0]==`Stop) begin
+            pc_reg <= pc_reg;
+            end
     end
 
     always @ (posedge clk) begin
@@ -47,10 +50,12 @@ module IF(
     end
 
 
-    assign next_pc = br_e ? br_addr 
+    // assign next_pc = br_e ? br_addr 
+    //                : pc_reg + 32'h4;
+    ///
+    assign next_pc =(stall[0]==`Stop)? pc_reg : br_e ? br_addr 
                    : pc_reg + 32'h4;
-
-    
+    ///
     assign inst_sram_en = ce_reg;
     assign inst_sram_wen = 4'b0;
     assign inst_sram_addr = pc_reg;
@@ -59,5 +64,5 @@ module IF(
         ce_reg,
         pc_reg
     };
-
+ 
 endmodule

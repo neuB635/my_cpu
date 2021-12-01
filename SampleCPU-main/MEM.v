@@ -6,7 +6,7 @@ module MEM(
     input wire [`StallBus-1:0] stall,
 
     input wire [`EX_TO_MEM_WD-1:0] ex_to_mem_bus,
-    input wire data_sram_rdata,
+    input wire [31:0] data_sram_rdata,
 
     output wire [`MEM_TO_WB_WD-1:0] mem_to_wb_bus,
     output wire [`MEM_TO_RF_BUS-1:0] mem_to_rf_bus//Siri
@@ -33,28 +33,43 @@ module MEM(
     end
 
     wire [31:0] mem_pc;
-    wire data_ram_en;
-    wire [3:0] data_ram_wen;
+    wire data_sram_en;
+    wire [3:0] data_sram_wen;
     wire sel_rf_res;
     wire rf_we;
     wire [4:0] rf_waddr;
     wire [31:0] rf_wdata;
     wire [31:0] ex_result;
     wire [31:0] mem_result;
+    wire [5:0]  lw_sw_op;
+
+    // assign {
+    //     mem_pc,         // 75:44                                                                                                                                              
+    //     data_ram_en,    // 43
+    //     data_ram_wen,   // 42:39
+    //     sel_rf_res,     // 38
+    //     rf_we,          // 37
+    //     rf_waddr,       // 36:32
+    //     ex_result       // 31:0
+    // } =  ex_to_mem_bus_r;
 
     assign {
-        mem_pc,         // 75:44                                                                                                                                              
-        data_ram_en,    // 43
-        data_ram_wen,   // 42:39
-        sel_rf_res,     // 38
-        rf_we,          // 37
-        rf_waddr,       // 36:32
+        mem_pc,          // 81:50
+        data_sram_en,   // 49
+        data_sram_wen,  // 48:45
+        sel_rf_res,     // 44
+        rf_we,          // 43
+        rf_waddr,       // 42:38
+        lw_sw_op,       // 37:32
         ex_result       // 31:0
-    } =  ex_to_mem_bus_r;
+    }=  ex_to_mem_bus_r;
 
-    
-
-
+    /////
+    wire inst_lw,inst_sw;
+    assign inst_lw=(lw_sw_op==6'b100011);
+    assign inst_sw=(lw_sw_op==6'b101011);
+    assign mem_result=  inst_lw? data_sram_rdata:32'b0;
+    ////
 
     assign rf_wdata = sel_rf_res ? mem_result : ex_result;
 
