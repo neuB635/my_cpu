@@ -1,6 +1,6 @@
 `define IF_TO_ID_WD 33
 `define ID_TO_EX_WD 159
-`define EX_TO_MEM_WD 76
+`define EX_TO_MEM_WD 82
 `define MEM_TO_WB_WD 271
 `define BR_WD 33
 `define DATA_SRAM_WD 69
@@ -14,7 +14,7 @@
 //Siri
 
 
-`define EX_TO_RF_BUS 38
+`define EX_TO_RF_BUS 44
 `define MEM_TO_RF_BUS 38
 `define ZeroWord 32b'0
 `define WriteEnable 1'b1
