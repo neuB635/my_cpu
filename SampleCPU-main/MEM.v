@@ -41,8 +41,9 @@ module MEM(
     wire [31:0] rf_wdata;
     wire [31:0] ex_result;
     wire [31:0] mem_result;
-
+    wire [5:0] ld_st_op;
     assign {
+        ld_st_op,       // 81:76
         mem_pc,         // 75:44                                                                                                                                              
         data_ram_en,    // 43
         data_ram_wen,   // 42:39
@@ -52,8 +53,10 @@ module MEM(
         ex_result       // 31:0
     } =  ex_to_mem_bus_r;
 
+    //load store 相关
+    wire inst_lw=(ld_st_op==6'b10_0011);
     
-
+    assign mem_result=inst_lw?data_sram_rdata:32'b0;
 
 
     assign rf_wdata = sel_rf_res ? mem_result : ex_result;

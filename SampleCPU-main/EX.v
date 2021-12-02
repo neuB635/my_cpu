@@ -38,8 +38,8 @@ module EX(
     wire [11:0] alu_op;
     wire [2:0] sel_alu_src1;
     wire [3:0] sel_alu_src2;
-    wire data_ram_en;
-    wire [3:0] data_ram_wen;
+    //wire data_ram_en;
+    //wire [3:0] data_ram_wen;
     wire rf_we;
     wire [4:0] rf_waddr;
     wire sel_rf_res;
@@ -52,14 +52,20 @@ module EX(
         alu_op,         // 84:83
         sel_alu_src1,   // 82:80
         sel_alu_src2,   // 79:76
-        data_ram_en,    // 75
-        data_ram_wen,   // 74:71
+        data_sram_en,    // 75
+        data_sram_wen,   // 74:71
         rf_we,          // 70
         rf_waddr,       // 69:65
         sel_rf_res,     // 64
         rf_rdata1,         // 63:32
         rf_rdata2          // 31:0
     } = id_to_ex_bus_r;
+
+    //load store相关
+    wire [5:0] ld_st_op;
+    assign ld_st_op=data_sram_en?inst[31:26]:6'b00_0000;
+    assign data_sram_wdata=data_sram_en?rf_rdata1+{{16{inst[15]}},inst[15:0]}:32'b0;
+    assign data_sram_addr=data_sram_en?rf_rdata2:32'b0;
 
     wire [31:0] imm_sign_extend, imm_zero_extend, sa_zero_extend;
     assign imm_sign_extend = {{16{inst[15]}},inst[15:0]};
@@ -83,12 +89,13 @@ module EX(
         .alu_result  (alu_result  )
     );
 
-    assign ex_result = (alu_op===12'b0)?alu_src1:alu_result;
+    assign ex_result = data_sram_en ?data_sram_addr:alu_result;
 
     assign ex_to_mem_bus = {
+        ld_st_op,       // 81:76
         ex_pc,          // 75:44
-        data_ram_en,    // 43
-        data_ram_wen,   // 42:39
+        data_sram_en,    // 43
+        data_sram_wen,   // 42:39
         sel_rf_res,     // 38
         rf_we,          // 37
         rf_waddr,       // 36:32
@@ -103,6 +110,7 @@ module EX(
     assign ex_to_rf_waddr=rf_waddr;
     assign ex_to_rf_wdata=ex_result;
     assign ex_to_rf_bus={
+        ld_st_op,
         ex_to_rf_we,
         ex_to_rf_waddr,
         ex_to_rf_wdata
