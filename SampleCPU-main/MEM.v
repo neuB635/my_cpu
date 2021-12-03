@@ -6,7 +6,7 @@ module MEM(
     input wire [`StallBus-1:0] stall,
 
     input wire [`EX_TO_MEM_WD-1:0] ex_to_mem_bus,
-    input wire data_sram_rdata,
+    input wire [31:0] data_sram_rdata,
 
     output wire [`MEM_TO_WB_WD-1:0] mem_to_wb_bus,
     output wire [`MEM_TO_RF_BUS-1:0] mem_to_rf_bus//Siri
@@ -54,7 +54,10 @@ module MEM(
     } =  ex_to_mem_bus_r;
 
     //load store 相关
-    wire inst_lw=(ld_st_op==6'b10_0011);
+    wire inst_lw;
+    assign inst_lw=(ld_st_op==6'b10_0011);
+    wire inst_sw;
+    assign inst_sw=(ld_st_op==6'b10_1011);
     
     assign mem_result=inst_lw?data_sram_rdata:32'b0;
 

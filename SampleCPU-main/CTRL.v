@@ -13,7 +13,7 @@ module CTRL(
             stall = `StallBus'b0;
         end
         else if (stallreq_from_id==`Stop) begin 
-            stall=`StallBus'b00_0111;
+            stall=`StallBus'b000111;
         end
         else begin
             stall = `StallBus'b0;

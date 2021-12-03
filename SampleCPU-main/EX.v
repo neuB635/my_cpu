@@ -64,13 +64,14 @@ module EX(
     //load store相关
     wire [5:0] ld_st_op;
     assign ld_st_op=data_sram_en?inst[31:26]:6'b00_0000;
-    assign data_sram_wdata=data_sram_en?rf_rdata1+{{16{inst[15]}},inst[15:0]}:32'b0;
-    assign data_sram_addr=data_sram_en?rf_rdata2:32'b0;
+    assign data_sram_addr=data_sram_en?rf_rdata1+{{16{inst[15]}},inst[15:0]}:32'b0;
+    assign data_sram_wdata=data_sram_en?rf_rdata2:32'b0;
 
     wire [31:0] imm_sign_extend, imm_zero_extend, sa_zero_extend;
     assign imm_sign_extend = {{16{inst[15]}},inst[15:0]};
     assign imm_zero_extend = {16'b0, inst[15:0]};
     assign sa_zero_extend = {27'b0,inst[10:6]};
+    
 
     wire [31:0] alu_src1, alu_src2;
     wire [31:0] alu_result, ex_result;
@@ -89,7 +90,7 @@ module EX(
         .alu_result  (alu_result  )
     );
 
-    assign ex_result = data_sram_en ?data_sram_addr:alu_result;
+    assign ex_result = data_sram_en ?data_sram_wdata:alu_result;
 
     assign ex_to_mem_bus = {
         ld_st_op,       // 81:76

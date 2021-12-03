@@ -19,7 +19,8 @@ module mycpu_core(
     output wire [31:0] debug_wb_pc,
     output wire [3:0] debug_wb_rf_wen,
     output wire [4:0] debug_wb_rf_wnum,
-    output wire [31:0] debug_wb_rf_wdata
+    output wire [31:0] debug_wb_rf_wdata,
+    output wire stallreq
 );
     wire [`IF_TO_ID_WD-1:0] if_to_id_bus;
     wire [`ID_TO_EX_WD-1:0] id_to_ex_bus;
@@ -30,7 +31,6 @@ module mycpu_core(
     wire [`WB_TO_RF_WD-1:0] wb_to_rf_bus;
     wire [`StallBus-1:0] stall;
     //Siri
-    wire stallreq;
     wire [`EX_TO_RF_BUS-1:0] ex_to_rf_bus;
     wire [`MEM_TO_RF_BUS-1:0] mem_to_rf_bus;
 
