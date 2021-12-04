@@ -130,10 +130,11 @@ module ID(
     wire rf_we;
     wire [4:0] rf_waddr;
     wire sel_rf_res;
-    wire [2:0] sel_rf_dst;
+    wire [4:0] sel_rf_dst;//modified
 
     wire [31:0] rdata1, rdata2;
     wire [31:0] rdata1_1, rdata2_1;
+   
 
     assign opcode = inst[31:26];
     assign rs = inst[25:21];//reg1_addr_o
@@ -159,21 +160,10 @@ module ID(
         .wdata  (wb_rf_wdata  )
     ); 
      
-    // assign rdata1 = (ce == 1'b0) ? 32'b0 : ((ex_to_rf_we == 1'b1 ) && (ex_to_rf_waddr==rs)) ? 
-    //                     ex_to_rf_wdata :((mem_to_rf_we == 1'b1) && (mem_to_rf_waddr==rs))? mem_to_rf_wdata : rdata1_1 ;
-    // assign rdata2 = (ce == 1'b0) ? 32'b0 : ((ex_to_rf_we == 1'b1 ) && (ex_to_rf_waddr==rt)) ? 
-    //                     ex_to_rf_wdata :((mem_to_rf_we == 1'b1) && (mem_to_rf_waddr==rt))? mem_to_rf_wdata : rdata2_1 ;
-    assign rdata1=((ce==1'b1)&&(ex_to_rf_we==1'b1)&&(ex_to_rf_waddr==rs))? 
-        ex_to_rf_wdata 
-        : ((ce==1'b1)&&(mem_to_rf_we==1'b1)&&(mem_to_rf_waddr==rs))? 
-            mem_to_rf_wdata
-            : (ce==1'b1)? 
-                rdata1_1:
-                    (ce==1'b0)? 
-                        imm:32'b0;
-    assign rdata2=((ce==1'b1)&&(ex_to_rf_we==1'b1)&&(ex_to_rf_waddr==rt))? ex_to_rf_wdata 
-    : ((ce==1'b1)&&(mem_to_rf_we==1'b1)&&(mem_to_rf_waddr==rt))? mem_to_rf_wdata
-     : (ce==1'b1)? rdata2_1:(ce==1'b0)? imm:32'b0;
+    assign rdata1 = (ce == 1'b0) ? 32'b0 : ((ex_to_rf_we == 1'b1 ) && (ex_to_rf_waddr==rs)) ? 
+                        ex_to_rf_wdata :((mem_to_rf_we == 1'b1) && (mem_to_rf_waddr==rs))? mem_to_rf_wdata : rdata1_1 ;
+    assign rdata2 = (ce == 1'b0) ? 32'b0 : ((ex_to_rf_we == 1'b1 ) && (ex_to_rf_waddr==rt)) ? 
+                        ex_to_rf_wdata :((mem_to_rf_we == 1'b1) && (mem_to_rf_waddr==rt))? mem_to_rf_wdata : rdata2_1 ;
 
     
     
@@ -328,15 +318,17 @@ module ID(
                              inst_and|inst_andi|inst_nor|inst_or|inst_ori|inst_xor|inst_xori|
                              inst_sllv|inst_srav|inst_srlv|
                              inst_jr|inst_bgez|
-                             inst_lw|inst_sw;//除了第一行都是新加的
+                             inst_lw|inst_sw|
+                             inst_jalr|
+                             inst_mthi|inst_mtlo;//除了第一行都是新加的
 
     // pc to reg1
-    assign sel_alu_src1[1] = inst_jal;
+    assign sel_alu_src1[1] = inst_jal|inst_bgezal|inst_bltzal|inst_jalr;
     
 
     // sa_zero_extend to reg1
     assign sel_alu_src1[2] = inst_sll|inst_sra|inst_srl;
-    
+   
     
     // rt to reg2
     assign sel_alu_src2[0] = inst_add|inst_addu|
@@ -348,13 +340,12 @@ module ID(
     // imm_sign_extend to reg2
     assign sel_alu_src2[1] = inst_lui|inst_addiu|
                              inst_addi|
-                             inst_slti|inst_sltiu|
-                             inst_bgez;
+                             inst_slti|inst_sltiu;
     
     
 
     // 32'h8 to reg2
-    assign sel_alu_src2[2] = inst_jal;
+    assign sel_alu_src2[2] = inst_jal|inst_bgezal|inst_bltzal|inst_jalr;
     
 
     // imm_zero_extend to reg2
@@ -364,7 +355,7 @@ module ID(
 
 
     assign op_add = inst_addiu|inst_add|inst_addi|inst_addu
-                    |inst_jal;
+                    |inst_jal|inst_jalr|inst_bgezal|inst_bltzal;
     assign op_sub = inst_sub|inst_subu;
     assign op_slt = inst_slt|inst_slti;
     assign op_sltu = inst_sltiu|inst_sltu;
@@ -395,7 +386,7 @@ module ID(
     assign rf_we = inst_ori|inst_lui| inst_addiu | inst_beq
                 |inst_add|inst_addi|inst_addu
                 |inst_sub|inst_subu
-                | inst_slt|inst_slti|inst_sltu|inst_sltiu
+                |inst_slt|inst_slti|inst_sltu|inst_sltiu
                 |inst_and|inst_andi|inst_nor|inst_or|inst_xor|inst_xori
                 |inst_sllv|inst_sll  //逻辑左移
                 |inst_srav|inst_sra  //算术右移
@@ -403,27 +394,38 @@ module ID(
                 |inst_bgezal  //大于等于0跳转，并保存pc值至通用寄存器
                 |inst_bltzal  //小于0跳转，并保存pc值至通用寄存器
                 |inst_jal|inst_jalr //无条件跳转
-                |inst_lw;  
+                |inst_lw
+                |inst_mfhi|inst_mflo|inst_mthi|inst_mtlo;  
 
 
     // store in [rd]
     assign sel_rf_dst[0] = inst_add|inst_addu|
                            inst_sub|inst_subu|
                            inst_slt|inst_sltu|
-                           inst_and|inst_nor|inst_or|inst_xor|inst_jal|inst_sll|inst_sllv|
+                           inst_and|inst_nor|inst_or|inst_xor|inst_sll|inst_sllv|
                            inst_sra|inst_srav|
-                           inst_srl|inst_srlv;    
+                           inst_srl|inst_srlv|
+                           inst_jalr|
+                           inst_mfhi|inst_mflo;    
     // store in [rt] 
     assign sel_rf_dst[1] = inst_ori | inst_lui | inst_addiu|
                            inst_slti|inst_sltiu|inst_andi|inst_ori|inst_xori
                            |inst_lw|inst_addi;
     // store in [31]
-    assign sel_rf_dst[2] = inst_jal;
+    assign sel_rf_dst[2] = inst_jal|inst_bltzal|inst_bgezal;
+
+    // store in hi
+    assign sel_rf_dst[3] = inst_mthi;
+
+    // store in lo
+    assign sel_rf_dst[4] = inst_mtlo;
 
     // sel for regfile address
     assign rf_waddr = {5{sel_rf_dst[0]}} & rd 
                     | {5{sel_rf_dst[1]}} & rt
-                    | {5{sel_rf_dst[2]}} & 32'd31;
+                    | {5{sel_rf_dst[2]}} & 32'd31
+                    | {5{sel_rf_dst[3]}} & 32'd19
+                    | {5{sel_rf_dst[4]}} & 32'd18 ;
 
     // 0 from alu_res ; 1 from ld_res
     assign sel_rf_res = inst_lw; 
@@ -455,10 +457,10 @@ module ID(
     assign pc_plus_4 = id_pc + 32'h4;
 
     assign rs_eq_rt = (rdata1 == rdata2);
-    assign rs_ge_z  = (rdata1 >= 0);
-    assign rs_gt_z  = (rdata1 >  0);
-    assign rs_le_z  = (rdata1 <= 0);
-    assign rs_lt_z  = (rdata1 <  0);
+    assign rs_ge_z  = (rdata1 >= 0 & rdata1[31] != 1);
+    assign rs_gt_z  = (rdata1 >  0 & rdata1[31] != 1);
+    assign rs_le_z  = (rdata1[31]==1|rdata1==32'b0);
+    assign rs_lt_z  = (rdata1[31]==1);
     assign rs_eq_z  = ~rdata1;
 
     assign br_e = inst_beq & rs_eq_rt|
