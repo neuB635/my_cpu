@@ -43,12 +43,12 @@ module mycpu_top(
         .debug_wb_rf_wdata (debug_wb_rf_wdata )
     );
     
-    mem_r u0_mem_r(
+    mmu u0_mmu(
     	.addr_i (inst_sram_addr_v ),
         .addr_o (inst_sram_addr   )
     );
 
-    mem_r u1_mem_r(
+    mmu u1_mmu(
     	.addr_i (data_sram_addr_v ),
         .addr_o (data_sram_addr   )
     );
