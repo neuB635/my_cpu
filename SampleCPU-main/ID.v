@@ -125,6 +125,7 @@ module ID(
     wire [11:0] alu_op;
 
     wire data_ram_en;
+    wire stop_div_mul;
     wire [3:0] data_ram_wen;
     
     wire rf_we;
@@ -289,7 +290,6 @@ module ID(
 
     assign inst_mfhi    = op_d[6'b00_0000]&func_d[6'b01_0000];
     assign inst_mflo    = op_d[6'b00_0000]&func_d[6'b01_0010];
-    assign inst_mthi    = op_d[6'b00_0000]&func_d[6'b01_0010];
     assign inst_mthi    = op_d[6'b00_0000]&func_d[6'b01_0001];
     assign inst_mtlo    = op_d[6'b00_0000]&func_d[6'b01_0011];
 
@@ -381,6 +381,8 @@ module ID(
 
     // load and store enable
     assign data_ram_en = inst_lw|inst_sw;
+    assign stop_div_mul = inst_divu|inst_div;
+    // |inst_mult|inst_multu;
 
     // write enable
     assign data_ram_wen = inst_sw?4'b1111:4'b0;
@@ -400,7 +402,7 @@ module ID(
                 |inst_bltzal  //小于0跳转，并保存pc值至通用寄存器
                 |inst_jal|inst_jalr //无条件跳转
                 |inst_lw
-                |inst_mfhi|inst_mflo|inst_mthi|inst_mtlo;  
+                |inst_mfhi|inst_mflo;  
 
 
     // store in [rd]
@@ -434,21 +436,24 @@ module ID(
     wire hilo_we;
     wire [1:0] hilo_read;
     wire [1:0] hilo_write;
-    wire signed_div_i;//是否为有符号除法运算，1为有符号
+    wire signed_mul_i;//是否为有符号乘法运算，1为有符号
+    wire [1:0]div_divu;
     // read from hi lo
     assign hilo_read = {inst_mfhi,inst_mflo};
     
     // write to hi lo
     assign hilo_write = {inst_mthi,inst_mtlo};
-    assign hilo_we = inst_mthi|inst_mtlo|inst_divu|inst_div;
+    assign hilo_we = inst_mthi|inst_mtlo|inst_divu|inst_div|inst_mult|inst_multu;
     
-    assign signed_div_i = inst_div;
-    
+    assign signed_mul_i = inst_mult;
+    assign div_divu = {inst_div,inst_divu};
 
     /////
 
     assign id_to_ex_bus = {
-        signed_div_i,   //164
+        signed_mul_i,   //167
+        stop_div_mul,   //166
+        div_divu,       //165:164   
         hilo_write,     //163:162
         hilo_we,        //161
         hilo_read,      //160:159

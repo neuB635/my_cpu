@@ -13,7 +13,8 @@ module EX(
     output wire [3:0] data_sram_wen,
     output wire [31:0] data_sram_addr,
     output wire [31:0] data_sram_wdata,
-    output wire [`EX_TO_RF_BUS-1:0] ex_to_rf_bus//Siri
+    output wire [`EX_TO_RF_BUS-1:0] ex_to_rf_bus,//Siri
+    output wire stallreq_for_ex
     
 );
 
@@ -47,11 +48,16 @@ module EX(
     wire [1:0] hilo_read;
     wire hilo_we;
     wire [1:0] hilo_write;
-    wire signed_div_i;
+    wire stop_div_mul;
+    wire signed_mul_i;
+    wire [1:0]div_divu;
     //reg is_in_delayslot;
 
     assign {
-        signed_div_i,
+        signed_mul_i,
+        stop_div_mul,
+        div_divu,       //166:165
+        // signed_div_i,
         hilo_write,
         hilo_we,
         hilo_read,      
@@ -71,7 +77,7 @@ module EX(
 
     //load store相关
     wire [5:0] ld_st_op;
-    assign ld_st_op=data_sram_en?inst[31:26]:6'b00_0000;
+    assign ld_st_op=data_sram_en?inst[31:26]: 6'b00_0000;
     assign data_sram_addr=data_sram_en?rf_rdata1+{{16{inst[15]}},inst[15:0]}:32'b0;
     assign data_sram_wdata=data_sram_en?rf_rdata2:32'b0;
 
@@ -115,13 +121,13 @@ module EX(
      // MUL part
     wire [63:0] mul_result;
     wire mul_signed; // 有符号乘法标记
-
+    assign mul_signed = signed_mul_i;
     mul u_mul(
     	.clk        (clk            ),
         .resetn     (~rst           ),
         .mul_signed (mul_signed     ),
-        .ina        (      ), // 乘法源操作数1
-        .inb        (      ), // 乘法源操作数2
+        .ina        (rf_rdata1      ), // 乘法源操作数1
+        .inb        (rf_rdata2      ), // 乘法源操作数2
         .result     (mul_result     ) // 乘法结果 64bit
     );
 
@@ -129,6 +135,9 @@ module EX(
     wire [63:0] div_result;
     wire inst_div, inst_divu;
     wire div_ready_i;
+    ///
+    assign {inst_div,inst_divu} = div_divu;
+    ///
     reg stallreq_for_div;
     assign stallreq_for_ex = stallreq_for_div;
 
@@ -136,13 +145,12 @@ module EX(
     reg [31:0] div_opdata2_o;
     reg div_start_o;
     reg signed_div_o;
-
-    div u_div(
+   div u_div(
     	.rst          (rst          ),
         .clk          (clk          ),
         .signed_div_i (signed_div_o ),
-        .opdata1_i    (rf_rdata1    ),
-        .opdata2_i    (rf_rdata2    ),
+        .opdata1_i    (div_opdata1_o    ),
+        .opdata2_i    (div_opdata2_o    ),
         .start_i      (div_start_o      ),
         .annul_i      (1'b0      ),
         .result_o     (div_result     ), // 除法结果 64bit
@@ -221,7 +229,7 @@ module EX(
 
     ////////
 
-    assign hilo_data =  (hilo_we & (inst[5:1]===5'b01101))? {div_result[31:0],div_result[63:32]}:
+    assign hilo_data =  (hilo_we & (inst[5:1]===5'b01101))? div_result:
                         (hilo_we & (inst[5:1]===5'b01100))? mul_result:
                         hilo_write[0]? {32'b0,rf_rdata1}:
                         hilo_write[1]? {rf_rdata1,32'b0} : 64'b0 ;
@@ -235,7 +243,7 @@ module EX(
         .lo         (lo             )   //out
     ); 
     ///////
-    assign ex_result = data_sram_en ?data_sram_wdata:(hilo_we & hilo_write[1])?hi:(hilo_we & hilo_write[0])?lo:alu_result;
+    assign ex_result = data_sram_en ?data_sram_wdata: hilo_read[1]?hi: hilo_read[0]?lo:alu_result;
 
     assign ex_to_mem_bus = {
         ld_st_op,       // 81:76

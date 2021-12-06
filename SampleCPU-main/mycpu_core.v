@@ -20,7 +20,8 @@ module mycpu_core(
     output wire [3:0] debug_wb_rf_wen,
     output wire [4:0] debug_wb_rf_wnum,
     output wire [31:0] debug_wb_rf_wdata,
-    output wire stallreq
+    output wire stallreq,
+    output wire stallreq_for_ex
 );
     wire [`IF_TO_ID_WD-1:0] if_to_id_bus;
     wire [`ID_TO_EX_WD-1:0] id_to_ex_bus;
@@ -71,7 +72,8 @@ module mycpu_core(
         .data_sram_wen   (data_sram_wen   ),
         .data_sram_addr  (data_sram_addr  ),
         .data_sram_wdata (data_sram_wdata ),
-        .ex_to_rf_bus    (ex_to_rf_bus    )//Siri
+        .ex_to_rf_bus    (ex_to_rf_bus    ),
+        .stallreq_for_ex (stallreq_for_ex)
     );
 
     MEM u_MEM(
@@ -99,6 +101,7 @@ module mycpu_core(
     CTRL u_CTRL(
     	.rst   (rst   ),
         .stallreq_from_id    (stallreq),//Siri
+        .stallreq_for_ex     (stallreq_for_ex),
         //.stallreq_for_load  (stallreq_for_load),//Siri
         .stall (stall )
     );
