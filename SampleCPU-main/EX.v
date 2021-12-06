@@ -44,9 +44,17 @@ module EX(
     wire [4:0] rf_waddr;
     wire sel_rf_res;
     wire [31:0] rf_rdata1, rf_rdata2;
+    wire [1:0] hilo_read;
+    wire hilo_we;
+    wire [1:0] hilo_write;
+    wire signed_div_i;
     //reg is_in_delayslot;
 
     assign {
+        signed_div_i,
+        hilo_write,
+        hilo_we,
+        hilo_read,      
         ex_pc,          // 148:117
         inst,           // 116:85
         alu_op,         // 84:83
@@ -92,35 +100,17 @@ module EX(
         .alu_src2    (alu_src2    ),
         .alu_result  (alu_result  )
     );
+///////
+    wire [63:0]hilo_data;
+    wire [31:0]hi;
+    wire [31:0]lo;
 
-    assign ex_result = data_sram_en ?data_sram_wdata:alu_result;
 
-    assign ex_to_mem_bus = {
-        ld_st_op,       // 81:76
-        ex_pc,          // 75:44
-        data_sram_en,    // 43
-        data_sram_wen,   // 42:39
-        sel_rf_res,     // 38
-        rf_we,          // 37
-        rf_waddr,       // 36:32
-        ex_result       // 31:0
-    };
 
-    //Siri
-    wire ex_to_rf_we;
-    wire [4:0] ex_to_rf_waddr;
-    wire [31:0] ex_to_rf_wdata;
-    assign ex_to_rf_we =rf_we;
-    assign ex_to_rf_waddr=rf_waddr;
-    assign ex_to_rf_wdata=ex_result;
-    assign ex_to_rf_bus={
-        ld_st_op,
-        ex_to_rf_we,
-        ex_to_rf_waddr,
-        ex_to_rf_wdata
-    };
-    //Siri
+   
 
+    
+    
 
      // MUL part
     wire [63:0] mul_result;
@@ -151,8 +141,8 @@ module EX(
     	.rst          (rst          ),
         .clk          (clk          ),
         .signed_div_i (signed_div_o ),
-        .opdata1_i    (div_opdata1_o    ),
-        .opdata2_i    (div_opdata2_o    ),
+        .opdata1_i    (rf_rdata1    ),
+        .opdata2_i    (rf_rdata2    ),
         .start_i      (div_start_o      ),
         .annul_i      (1'b0      ),
         .result_o     (div_result     ), // 除法结果 64bit
@@ -225,6 +215,54 @@ module EX(
             endcase
         end
     end
+
+
+
+
+    ////////
+
+    assign hilo_data =  (hilo_we & (inst[5:1]===5'b01101))? {div_result[31:0],div_result[63:32]}:
+                        (hilo_we & (inst[5:1]===5'b01100))? mul_result:
+                        hilo_write[0]? {32'b0,rf_rdata1}:
+                        hilo_write[1]? {rf_rdata1,32'b0} : 64'b0 ;
+
+    hilo u_hilo(
+    	.clk        (clk            ),
+        .rst        (rst            ),
+        .we         (hilo_we        ),  //in
+        .hilo_data  (hilo_data      ),  //in
+        .hi         (hi             ),  //out
+        .lo         (lo             )   //out
+    ); 
+    ///////
+    assign ex_result = data_sram_en ?data_sram_wdata:(hilo_we & hilo_write[1])?hi:(hilo_we & hilo_write[0])?lo:alu_result;
+
+    assign ex_to_mem_bus = {
+        ld_st_op,       // 81:76
+        ex_pc,          // 75:44
+        data_sram_en,    // 43
+        data_sram_wen,   // 42:39
+        sel_rf_res,     // 38
+        rf_we,          // 37
+        rf_waddr,       // 36:32
+        ex_result       // 31:0
+    };
+
+    //Siri
+    wire ex_to_rf_we;
+    wire [4:0] ex_to_rf_waddr;
+    wire [31:0] ex_to_rf_wdata;
+    assign ex_to_rf_we =rf_we;
+    assign ex_to_rf_waddr=rf_waddr;
+    assign ex_to_rf_wdata=ex_result;
+    assign ex_to_rf_bus={
+        ld_st_op,
+        ex_to_rf_we,
+        ex_to_rf_waddr,
+        ex_to_rf_wdata
+    };
+    //Siri
+   
     
     
 endmodule

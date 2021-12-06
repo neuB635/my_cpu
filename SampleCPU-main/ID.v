@@ -130,7 +130,7 @@ module ID(
     wire rf_we;
     wire [4:0] rf_waddr;
     wire sel_rf_res;
-    wire [4:0] sel_rf_dst;//modified
+    wire [2:0] sel_rf_dst;//modified
 
     wire [31:0] rdata1, rdata2;
     wire [31:0] rdata1_1, rdata2_1;
@@ -174,7 +174,7 @@ module ID(
     wire inst_add,inst_addi,inst_addu;
     wire inst_sub,inst_subu;
     wire inst_slt,inst_slti,inst_sltu,inst_sltiu;
-    //乘除
+    wire inst_div,inst_divu,inst_mult,inst_multu;//乘除
     wire inst_and,inst_andi,inst_nor,inst_or,inst_xor,inst_xori;   //
 
     //移位
@@ -250,7 +250,10 @@ module ID(
     assign inst_sltu    = op_d[6'b00_0000]&func_d[6'b10_1011];
     assign inst_sltiu   = op_d[6'b00_1011];
 
-    //乘除
+    assign inst_div     = op_d[6'b000000]&func_d[6'b011010];
+    assign inst_divu    = op_d[6'b000000]&func_d[6'b011011];
+    assign inst_mult    = op_d[6'b000000]&func_d[6'b011000];
+    assign inst_multu   = op_d[6'b000000]&func_d[6'b011001];
 
     assign inst_and     = op_d[6'b00_0000]&func_d[6'b10_0100];
     assign inst_andi    = op_d[6'b00_1100];
@@ -314,6 +317,7 @@ module ID(
     // rs to reg1
     assign sel_alu_src1[0] = inst_add|inst_addi|inst_addu|inst_addiu|
                              inst_sub|inst_subu|
+                             inst_div|inst_divu|inst_mult|inst_multu|
                              inst_slt|inst_slti|inst_sltu|inst_sltiu|
                              inst_and|inst_andi|inst_nor|inst_or|inst_ori|inst_xor|inst_xori|
                              inst_sllv|inst_srav|inst_srlv|
@@ -333,6 +337,7 @@ module ID(
     // rt to reg2
     assign sel_alu_src2[0] = inst_add|inst_addu|
                              inst_sub|inst_subu|
+                             inst_div|inst_divu|inst_mult|inst_multu|
                              inst_slt|inst_sltu|inst_sltiu|
                              inst_and|inst_nor|inst_or|inst_xor|inst_sll|
                              inst_sw|inst_sllv|inst_sra|inst_srav|inst_srl|inst_srlv;
@@ -414,23 +419,39 @@ module ID(
     // store in [31]
     assign sel_rf_dst[2] = inst_jal|inst_bltzal|inst_bgezal;
 
-    // store in hi
-    assign sel_rf_dst[3] = inst_mthi;
-
-    // store in lo
-    assign sel_rf_dst[4] = inst_mtlo;
 
     // sel for regfile address
     assign rf_waddr = {5{sel_rf_dst[0]}} & rd 
                     | {5{sel_rf_dst[1]}} & rt
-                    | {5{sel_rf_dst[2]}} & 32'd31
-                    | {5{sel_rf_dst[3]}} & 32'd19
-                    | {5{sel_rf_dst[4]}} & 32'd18 ;
+                    | {5{sel_rf_dst[2]}} & 32'd31;
+        
 
     // 0 from alu_res ; 1 from ld_res
     assign sel_rf_res = inst_lw; 
 
+
+    //////hilo
+    wire hilo_we;
+    wire [1:0] hilo_read;
+    wire [1:0] hilo_write;
+    wire signed_div_i;//是否为有符号除法运算，1为有符号
+    // read from hi lo
+    assign hilo_read = {inst_mfhi,inst_mflo};
+    
+    // write to hi lo
+    assign hilo_write = {inst_mthi,inst_mtlo};
+    assign hilo_we = inst_mthi|inst_mtlo|inst_divu|inst_div;
+    
+    assign signed_div_i = inst_div;
+    
+
+    /////
+
     assign id_to_ex_bus = {
+        signed_div_i,   //164
+        hilo_write,     //163:162
+        hilo_we,        //161
+        hilo_read,      //160:159
         id_pc,          // 158:127
         inst,           // 126:95
         alu_op,         // 94:83
@@ -487,6 +508,9 @@ module ID(
     assign stallreq=((ex_op==6'b10_0011)&&(ce==1'b1)&&(ex_to_rf_we==1'b1)&&(ex_to_rf_waddr==rs))?
     `Stop :((ex_op==6'b10_0011)&&(ce==1'b1)&&(ex_to_rf_we==1'b1)&&(ex_to_rf_waddr==rt))? `Stop: `NoStop;
 
+
+
+    
     
 
 endmodule
