@@ -42,7 +42,9 @@ module MEM(
     wire [31:0] ex_result;
     wire [31:0] mem_result;
     wire [5:0] ld_st_op;
+    wire[4:0]new_lb_lw_lh;
     assign {
+        new_lb_lw_lh,
         ld_st_op,       // 81:76
         mem_pc,         // 75:44                                                                                                                                              
         data_ram_en,    // 43
@@ -54,12 +56,29 @@ module MEM(
     } =  ex_to_mem_bus_r;
 
     //load store 相关
-    wire inst_lw;
-    assign inst_lw=(ld_st_op==6'b10_0011);
-    wire inst_sw;
-    assign inst_sw=(ld_st_op==6'b10_1011);
+    wire mem_inst_lw;
+    assign mem_inst_lw=(ld_st_op==6'b10_0011);
+    // wire mem_inst_sw;
+    // assign mem_inst_sw=(ld_st_op==6'b10_1011);
+    wire mem_inst_lb;
+    assign mem_inst_lb=(ld_st_op==6'b100000)|(ld_st_op==6'b100100);
+    wire mem_inst_lh;
+    assign mem_inst_lh=(ld_st_op==6'b100001)|(ld_st_op==6'b100101);
     
-    assign mem_result=inst_lw?data_sram_rdata:32'b0;
+
+    assign mem_result=mem_inst_lw?data_sram_rdata: 
+                      (mem_inst_lb&(new_lb_lw_lh==5'b1_1000))?{{24{data_sram_rdata[7]}},data_sram_rdata[7:0]}:
+                      (mem_inst_lb&(new_lb_lw_lh==5'b1_0100))?{{24{data_sram_rdata[15]}},data_sram_rdata[15:8]}:
+                      (mem_inst_lb&(new_lb_lw_lh==5'b1_0010))?{{24{data_sram_rdata[23]}},data_sram_rdata[23:16]}:
+                      (mem_inst_lb&(new_lb_lw_lh==5'b1_0001))?{{24{data_sram_rdata[31]}},data_sram_rdata[31:24]}:
+                      (mem_inst_lh&(new_lb_lw_lh==5'b1_1100))?{{16{data_sram_rdata[15]}},data_sram_rdata[15:0]}:
+                      (mem_inst_lh&(new_lb_lw_lh==5'b1_0011))?{{16{data_sram_rdata[31]}},data_sram_rdata[31:16]}:
+                      (mem_inst_lb&(new_lb_lw_lh==5'b0_1000))?{24'b0,data_sram_rdata[7:0]}:
+                      (mem_inst_lb&(new_lb_lw_lh==5'b0_0100))?{24'b0,data_sram_rdata[15:8]}:
+                      (mem_inst_lb&(new_lb_lw_lh==5'b0_0010))?{24'b0,data_sram_rdata[23:16]}:
+                      (mem_inst_lb&(new_lb_lw_lh==5'b0_0001))?{24'b0,data_sram_rdata[31:24]}:
+                      (mem_inst_lh&(new_lb_lw_lh==5'b0_1100))?{16'b0,data_sram_rdata[15:0]}:
+                      (mem_inst_lh&(new_lb_lw_lh==5'b0_0011))?{16'b0,data_sram_rdata[31:16]}:32'b0;
 
 
     assign rf_wdata = sel_rf_res ? mem_result : ex_result;

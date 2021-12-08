@@ -51,9 +51,12 @@ module EX(
     wire stop_div_mul;
     wire signed_mul_i;
     wire [1:0]div_divu;
+    wire [1:0]sb_sh_en;
     //reg is_in_delayslot;
-
+    wire [3:0]new_data_sram_wen;
+    wire [3:0]lb_lh_lw;
     assign {
+        lb_lh_lw,
         signed_mul_i,
         stop_div_mul,
         div_divu,       //166:165
@@ -67,7 +70,7 @@ module EX(
         sel_alu_src1,   // 82:80
         sel_alu_src2,   // 79:76
         data_sram_en,    // 75
-        data_sram_wen,   // 74:71
+        new_data_sram_wen,   // 74:71
         rf_we,          // 70
         rf_waddr,       // 69:65
         sel_rf_res,     // 64
@@ -79,7 +82,50 @@ module EX(
     wire [5:0] ld_st_op;
     assign ld_st_op=data_sram_en?inst[31:26]: 6'b00_0000;
     assign data_sram_addr=data_sram_en?rf_rdata1+{{16{inst[15]}},inst[15:0]}:32'b0;
-    assign data_sram_wdata=data_sram_en?rf_rdata2:32'b0;
+    assign data_sram_wen=    (new_data_sram_wen == 4'b1111)?4'b1111:
+                             ((new_data_sram_wen == 4'b0011)&(data_sram_addr[1:0]==2'b00))?4'b0011:
+                             ((new_data_sram_wen == 4'b0011)&(data_sram_addr[1:0]==2'b10))?4'b1100:
+                             ((new_data_sram_wen == 4'b0001)&(data_sram_addr[1:0]==2'b00))?4'b0001:
+                             ((new_data_sram_wen == 4'b0001)&(data_sram_addr[1:0]==2'b01))?4'b0010:
+                             ((new_data_sram_wen == 4'b0001)&(data_sram_addr[1:0]==2'b10))?4'b0100:
+                             ((new_data_sram_wen == 4'b0001)&(data_sram_addr[1:0]==2'b11))?4'b1000:4'b0;
+
+    assign data_sram_wdata=(new_data_sram_wen == 4'b1111)?rf_rdata2:
+                           (new_data_sram_wen == 4'b0011)?{16'b0,rf_rdata2[15:0]}:
+                           (new_data_sram_wen == 4'b1100)?{rf_rdata2[15:0],16'b0}:
+                           (new_data_sram_wen == 4'b1000)?{rf_rdata2[7:0],24'b0}:
+                           (new_data_sram_wen == 4'b0100)?{8'b0,rf_rdata2[7:0],16'b0}:
+                           (new_data_sram_wen == 4'b0010)?{16'b0,rf_rdata2[7:0],8'b0}:
+                           (new_data_sram_wen == 4'b0001)?{24'b0,rf_rdata2[7:0]}:32'b0;
+    
+    
+
+
+    // {
+    //                            new_data_sram_wen[3]?rf_rdata2[31:24]:8'b0,
+    //                            new_data_sram_wen[2]?rf_rdata2[23:16]:8'b0,
+    //                            new_data_sram_wen[1]?rf_rdata2[15:8]:8'b0,
+    //                            new_data_sram_wen[0]?rf_rdata2[7:0]:8'b0
+    //                        };
+
+    wire [4:0] new_lb_lw_lh;
+    assign new_lb_lw_lh =    (lb_lh_lw == 4'b1111)?5'b1_1111:
+                             ((lb_lh_lw == 4'b0011)&(data_sram_addr[1:0]==2'b00))?5'b1_1100:
+                             ((lb_lh_lw == 4'b0011)&(data_sram_addr[1:0]==2'b10))?5'b1_0011:
+                             ((lb_lh_lw == 4'b0001)&(data_sram_addr[1:0]==2'b00))?5'b1_1000:
+                             ((lb_lh_lw == 4'b0001)&(data_sram_addr[1:0]==2'b01))?5'b1_0100:
+                             ((lb_lh_lw == 4'b0001)&(data_sram_addr[1:0]==2'b10))?5'b1_0010:
+                             ((lb_lh_lw == 4'b0001)&(data_sram_addr[1:0]==2'b11))?5'b1_0001:
+                             ((lb_lh_lw == 4'b0111)&(data_sram_addr[1:0]==2'b00))?5'b0_1100:
+                             ((lb_lh_lw == 4'b0111)&(data_sram_addr[1:0]==2'b10))?5'b0_0011:
+                             ((lb_lh_lw == 4'b0101)&(data_sram_addr[1:0]==2'b00))?5'b0_1000:
+                             ((lb_lh_lw == 4'b0101)&(data_sram_addr[1:0]==2'b01))?5'b0_0100:
+                             ((lb_lh_lw == 4'b0101)&(data_sram_addr[1:0]==2'b10))?5'b0_0010:
+                             ((lb_lh_lw == 4'b0101)&(data_sram_addr[1:0]==2'b11))?5'b0_0001:5'b0_0000;
+
+     
+
+
 
     wire [31:0] imm_sign_extend, imm_zero_extend, sa_zero_extend;
     assign imm_sign_extend = {{16{inst[15]}},inst[15:0]};
@@ -246,6 +292,7 @@ module EX(
     assign ex_result = data_sram_en ?data_sram_wdata: hilo_read[1]?hi: hilo_read[0]?lo:alu_result;
 
     assign ex_to_mem_bus = {
+        new_lb_lw_lh,    //86:82
         ld_st_op,       // 81:76
         ex_pc,          // 75:44
         data_sram_en,    // 43

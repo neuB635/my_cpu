@@ -324,7 +324,8 @@ module ID(
                              inst_jr|inst_bgez|
                              inst_lw|inst_sw|
                              inst_jalr|
-                             inst_mthi|inst_mtlo;//除了第一行都是新加的
+                             inst_mthi|inst_mtlo|
+                             inst_lb|inst_sb|inst_sh|inst_lh|inst_lbu|inst_lhu;//除了第一行都是新加的
 
     // pc to reg1
     assign sel_alu_src1[1] = inst_jal|inst_bgezal|inst_bltzal|inst_jalr;
@@ -340,7 +341,7 @@ module ID(
                              inst_div|inst_divu|inst_mult|inst_multu|
                              inst_slt|inst_sltu|inst_sltiu|
                              inst_and|inst_nor|inst_or|inst_xor|inst_sll|
-                             inst_sw|inst_sllv|inst_sra|inst_srav|inst_srl|inst_srlv;
+                             inst_sw|inst_sllv|inst_sra|inst_srav|inst_srl|inst_srlv|inst_sb|inst_sh;
     
     // imm_sign_extend to reg2
     assign sel_alu_src2[1] = inst_lui|inst_addiu|
@@ -380,12 +381,16 @@ module ID(
 
 
     // load and store enable
-    assign data_ram_en = inst_lw|inst_sw;
+    assign data_ram_en = inst_sw|inst_lw|inst_lb|inst_sb|inst_sh|inst_lh|inst_lbu|inst_lhu;
     assign stop_div_mul = inst_divu|inst_div;
     // |inst_mult|inst_multu;
 
     // write enable
-    assign data_ram_wen = inst_sw?4'b1111:4'b0;
+    assign data_ram_wen = inst_sw?4'b1111:inst_sb?4'b0001:inst_sh?4'b0011:4'b0;
+    wire [3:0] lb_lh_lw;
+    assign lb_lh_lw = inst_lw?4'b1111:inst_lh?4'b0011:inst_lb?4'b0001:inst_lbu?4'b0101:inst_lhu?4'b0111:4'b0;
+    // wire [1:0]sb_sh_en;
+    // assign sb_sh_en = {inst_sb,inst_sh};
 
 
 
@@ -402,7 +407,8 @@ module ID(
                 |inst_bltzal  //小于0跳转，并保存pc值至通用寄存器
                 |inst_jal|inst_jalr //无条件跳转
                 |inst_lw
-                |inst_mfhi|inst_mflo;  
+                |inst_mfhi|inst_mflo|
+                inst_lb|inst_lh|inst_lbu|inst_lhu;  
 
 
     // store in [rd]
@@ -417,7 +423,7 @@ module ID(
     // store in [rt] 
     assign sel_rf_dst[1] = inst_ori | inst_lui | inst_addiu|
                            inst_slti|inst_sltiu|inst_andi|inst_ori|inst_xori
-                           |inst_lw|inst_addi;
+                           |inst_lw|inst_addi|inst_lb|inst_lh|inst_lbu|inst_lhu;
     // store in [31]
     assign sel_rf_dst[2] = inst_jal|inst_bltzal|inst_bgezal;
 
@@ -429,7 +435,7 @@ module ID(
         
 
     // 0 from alu_res ; 1 from ld_res
-    assign sel_rf_res = inst_lw; 
+    assign sel_rf_res = inst_lw|inst_lb|inst_lh|inst_lbu|inst_lhu; 
 
 
     //////hilo
@@ -451,6 +457,7 @@ module ID(
     /////
 
     assign id_to_ex_bus = {
+        lb_lh_lw,       //171:168
         signed_mul_i,   //167
         stop_div_mul,   //166
         div_divu,       //165:164   
@@ -510,8 +517,11 @@ module ID(
     };
 
     //stall相关
-    assign stallreq=((ex_op==6'b10_0011)&&(ce==1'b1)&&(ex_to_rf_we==1'b1)&&(ex_to_rf_waddr==rs))?
-    `Stop :((ex_op==6'b10_0011)&&(ce==1'b1)&&(ex_to_rf_we==1'b1)&&(ex_to_rf_waddr==rt))? `Stop: `NoStop;
+    wire load_stop;
+    assign load_stop = (ex_op==6'b10_0011) | (ex_op==6'b10_0000) | (ex_op==6'b10_1011)| (ex_op==6'b10_1001)| (ex_op==6'b10_1000)|
+                       (ex_op==6'b10_0001) | (ex_op==6'b10_0100) | (ex_op==6'b10_0101);
+    assign stallreq=(load_stop&&(ce==1'b1)&&(ex_to_rf_we==1'b1)&&(ex_to_rf_waddr==rs))?
+    `Stop :(load_stop&&(ce==1'b1)&&(ex_to_rf_we==1'b1)&&(ex_to_rf_waddr==rt))? `Stop: `NoStop;
 
 
 
