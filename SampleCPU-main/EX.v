@@ -90,13 +90,13 @@ module EX(
                              ((new_data_sram_wen == 4'b0001)&(data_sram_addr[1:0]==2'b10))?4'b0100:
                              ((new_data_sram_wen == 4'b0001)&(data_sram_addr[1:0]==2'b11))?4'b1000:4'b0;
 
-    assign data_sram_wdata=(new_data_sram_wen == 4'b1111)?rf_rdata2:
-                           (new_data_sram_wen == 4'b0011)?{16'b0,rf_rdata2[15:0]}:
-                           (new_data_sram_wen == 4'b1100)?{rf_rdata2[15:0],16'b0}:
-                           (new_data_sram_wen == 4'b1000)?{rf_rdata2[7:0],24'b0}:
-                           (new_data_sram_wen == 4'b0100)?{8'b0,rf_rdata2[7:0],16'b0}:
-                           (new_data_sram_wen == 4'b0010)?{16'b0,rf_rdata2[7:0],8'b0}:
-                           (new_data_sram_wen == 4'b0001)?{24'b0,rf_rdata2[7:0]}:32'b0;
+    assign data_sram_wdata=(data_sram_wen == 4'b1111)?rf_rdata2:
+                           (data_sram_wen == 4'b0011)?{16'b0,rf_rdata2[15:0]}:
+                           (data_sram_wen == 4'b1100)?{rf_rdata2[15:0],16'b0}:
+                           (data_sram_wen == 4'b1000)?{rf_rdata2[7:0],24'b0}:
+                           (data_sram_wen == 4'b0100)?{8'b0,rf_rdata2[7:0],16'b0}:
+                           (data_sram_wen == 4'b0010)?{16'b0,rf_rdata2[7:0],8'b0}:
+                           (data_sram_wen == 4'b0001)?{24'b0,rf_rdata2[7:0]}:32'b0;
     
     
 
