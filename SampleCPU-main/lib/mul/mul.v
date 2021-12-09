@@ -7,6 +7,217 @@ module mul (
   output wire signed [63:0] result
 
 );
+`define Signed 1'b1
+`define UnSigned 1'b0
+
+
+  reg [31:0] ex_ina;
+  reg [31:0] ex_inb;
+  reg reverse;
+
+  reg [62 :0] temp0;
+  reg [61 :0] temp1;
+  reg [60 :0] temp2;
+  reg [59 :0] temp3;
+  reg [58 :0] temp4;
+  reg [57 :0] temp5;
+  reg [56 :0] temp6;
+  reg [55 :0] temp7;
+  reg [54 :0] temp8;
+  reg [53 :0] temp9;
+  reg [52 :0] temp10;
+  reg [51 :0] temp11;
+  reg [50 :0] temp12;
+  reg [49 :0] temp13;
+  reg [48 :0] temp14;
+  reg [47 :0] temp15;
+  reg [46 :0] temp16;
+  reg [45 :0] temp17;
+  reg [44 :0] temp18;
+  reg [43 :0] temp19;
+  reg [42 :0] temp20;
+  reg [41 :0] temp21;
+  reg [40 :0] temp22;
+  reg [39 :0] temp23;
+  reg [38 :0] temp24;
+  reg [37 :0] temp25;
+  reg [36 :0] temp26;
+  reg [35 :0] temp27;
+  reg [34 :0] temp28;
+  reg [33 :0] temp29;
+  reg [32 :0] temp30;
+  reg [31 :0] temp31;
+
+  wire [63:0] out1_0;
+  wire [61:0] out1_1;
+  wire [59:0] out1_2;
+  wire [57:0] out1_3;
+  wire [55:0] out1_4;
+  wire [53:0] out1_5;
+  wire [51:0] out1_6;
+  wire [49:0] out1_7;
+  wire [47:0] out1_8;
+  wire [45:0] out1_9;
+  wire [43:0] out1_10;
+  wire [41:0] out1_11;
+  wire [39:0] out1_12;
+  wire [37:0] out1_13;
+  wire [35:0] out1_14;
+  wire [33:0] out1_15;
+
+  wire [63:0] out2_0;
+	wire [59:0] out2_1;
+	wire [55:0] out2_2;
+	wire [51:0] out2_3;
+	wire [47:0] out2_4;
+	wire [43:0] out2_5;
+	wire [39:0] out2_6;
+	wire [35:0] out2_7;
+
+  wire [63:0] out3_0;
+	wire [55:0] out3_1;
+	wire [47:0] out3_2;
+	wire [39:0] out3_3;
+
+  wire [63:0] out4_0;
+	wire [47:0] out4_1;
+    
+  // 32*1乘法器
+
+  function [31:0] mut32_1;
+  input [31:0] operand;
+  input sel;
+
+  begin
+    mut32_1 = sel ? operand : 32'b0;
+  end
+  endfunction
+
+  always @ (*) begin
+    if (!resetn) begin
+      temp0=63'b0;
+      temp1=62'b0;
+      temp2=61'b0;
+      temp3=60'b0;
+      temp4=59'b0;
+      temp5=58'b0;
+      temp6=57'b0;
+      temp7=56'b0;
+      temp8=55'b0;
+      temp9=54'b0;
+      temp10=53'b0;
+      temp11=52'b0;
+      temp12=51'b0;
+      temp13=50'b0;
+      temp14=49'b0;
+      temp15=48'b0;
+      temp16=47'b0;
+      temp17=46'b0;
+      temp18=45'b0;
+      temp19=44'b0;
+      temp20=43'b0;
+      temp21=42'b0;
+      temp22=41'b0;
+      temp23=40'b0;
+      temp24=39'b0;
+      temp25=38'b0;
+      temp26=37'b0;
+      temp27=36'b0;
+      temp28=35'b0;
+      temp29=34'b0;
+      temp30=33'b0;
+      temp31=32'b0;
+    end
+    else begin
+      if (mul_signed==`UnSigned) begin
+        ex_ina=ina;
+        ex_inb=inb;
+        reverse=1'b0;
+      end else begin
+        ex_ina=ina;
+        ex_inb=inb;
+        if(ina[31]==1'b1) begin
+          ex_ina=~(ina-1);
+        end
+        if (inb[31]==1'b1) begin
+          ex_inb=~(inb-1);
+        end
+        reverse=ina[31]+inb[31];
+      end
+      temp31=mut32_1(ex_ina,ex_inb[0]);
+      temp30=mut32_1(ex_ina,ex_inb[1])<<1;
+      temp29=mut32_1(ex_ina,ex_inb[2])<<2;
+      temp28=mut32_1(ex_ina,ex_inb[3])<<3;
+      temp27=mut32_1(ex_ina,ex_inb[4])<<4;
+      temp26=mut32_1(ex_ina,ex_inb[5])<<5;
+      temp25=mut32_1(ex_ina,ex_inb[6])<<6;
+      temp24=mut32_1(ex_ina,ex_inb[7])<<7;
+      temp23=mut32_1(ex_ina,ex_inb[8])<<8;
+      temp22=mut32_1(ex_ina,ex_inb[9])<<9;
+      temp21=mut32_1(ex_ina,ex_inb[10])<<10;
+      temp20=mut32_1(ex_ina,ex_inb[11])<<11;
+      temp19=mut32_1(ex_ina,ex_inb[12])<<12;
+      temp18=mut32_1(ex_ina,ex_inb[13])<<13;
+      temp17=mut32_1(ex_ina,ex_inb[14])<<14;
+      temp16=mut32_1(ex_ina,ex_inb[15])<<15;
+      temp15=mut32_1(ex_ina,ex_inb[16])<<16;
+      temp14=mut32_1(ex_ina,ex_inb[17])<<17;
+      temp13=mut32_1(ex_ina,ex_inb[18])<<18;
+      temp12=mut32_1(ex_ina,ex_inb[19])<<19;
+      temp11=mut32_1(ex_ina,ex_inb[20])<<20;
+      temp10=mut32_1(ex_ina,ex_inb[21])<<21;
+      temp9=mut32_1(ex_ina,ex_inb[22])<<22;
+      temp8=mut32_1(ex_ina,ex_inb[23])<<23;
+      temp7=mut32_1(ex_ina,ex_inb[24])<<24;
+      temp6=mut32_1(ex_ina,ex_inb[25])<<25;
+      temp5=mut32_1(ex_ina,ex_inb[26])<<26;
+      temp4=mut32_1(ex_ina,ex_inb[27])<<27;
+      temp3=mut32_1(ex_ina,ex_inb[28])<<28;
+      temp2=mut32_1(ex_ina,ex_inb[29])<<29;
+      temp1=mut32_1(ex_ina,ex_inb[30])<<30;
+      temp0=mut32_1(ex_ina,ex_inb[31])<<31;
+    end
+  end
+
+  assign out1_0 = temp0+temp1;
+	assign out1_1 = temp2+temp3;
+	assign out1_2 = temp4+temp5;
+	assign out1_3 = temp6+temp7;
+	assign out1_4 = temp8+temp9;
+	assign out1_5 = temp10+temp11;
+	assign out1_6 = temp12+temp13;
+	assign out1_7 = temp14+temp15;
+	assign out1_8 = temp16+temp17;
+	assign out1_9 = temp18+temp19;
+	assign out1_10 = temp20+temp21;
+	assign out1_11 = temp22+temp23;
+	assign out1_12 = temp24+temp25;
+	assign out1_13 = temp26+temp27;
+	assign out1_14 = temp28+temp29;
+	assign out1_15 = temp30+temp31;
+
+  assign out2_0 = out1_0+out1_1;
+	assign out2_1 = out1_2+out1_3;
+	assign out2_2 = out1_4+out1_5;
+	assign out2_3 = out1_6+out1_7;
+	assign out2_4 = out1_8+out1_9;
+	assign out2_5 = out1_10+out1_11;
+	assign out2_6 = out1_12+out1_13;
+	assign out2_7 = out1_14+out1_15;
+
+  assign out3_0 = out2_0+out2_1;
+	assign out3_1 = out2_2+out2_3;
+	assign out3_2 = out2_4+out2_5;
+	assign out3_3 = out2_6+out2_7;
+
+  assign out4_0 = out3_0+out3_1;
+	assign out4_1 = out3_2+out3_3;
+
+  assign result=reverse?~(out4_0+out4_1)+1'b1:out4_0+out4_1;
+
+
+//原来代码开始
+/*
   reg one_mul_signed;
   reg [31:0] one_ina;
   reg [31:0] one_inb;
@@ -454,6 +665,8 @@ module mul (
   add unit14(.ina(temp5_s), .inb(carry1[1]), .inc(carry2), .s(s), .c(c));
 
   assign result = s + c;
+*/
+//原来代码终止处
 
 //  always @ (posedge clk, posedge resetn) begin
 //    if (!resetn) begin
