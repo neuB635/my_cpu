@@ -52,10 +52,12 @@ module EX(
     wire signed_mul_i;
     wire [1:0]div_divu;
     wire [1:0]sb_sh_en;
+    wire [1:0]mul_mulu;
     //reg is_in_delayslot;
     wire [3:0]new_data_sram_wen;
     wire [3:0]lb_lh_lw;
     assign {
+        mul_mulu,
         lb_lh_lw,
         signed_mul_i,
         stop_div_mul,
@@ -167,15 +169,104 @@ module EX(
      // MUL part
     wire [63:0] mul_result;
     wire mul_signed; // 有符号乘法标记
+    wire inst_mul, inst_mulu;
+    assign {inst_mul,inst_mulu} = mul_mulu;
     assign mul_signed = signed_mul_i;
+    wire mul_ready_i;
+    reg mul_start_o;
+    reg [31:0] mul_opdata1_o;
+    reg [31:0] mul_opdata2_o;
+    reg signed_mul_o;
+     reg stallreq_for_mul;
     mul u_mul(
     	.clk        (clk            ),
         .resetn     (~rst           ),
-        .mul_signed (mul_signed     ),
-        .ina        (rf_rdata1      ), // 乘法源操作数1
-        .inb        (rf_rdata2      ), // 乘法源操作数2
+        .mul_signed (signed_mul_o     ),
+        .ina        (mul_opdata1_o      ), // 乘法源操作数1
+        .inb        (mul_opdata2_o      ), // 乘法源操作数2
+        .start_i    (mul_start_o  ),
+        .ready_o    (mul_ready_i    ),
         .result     (mul_result     ) // 乘法结果 64bit
     );
+    always @ (*) begin
+        if (rst) begin
+            stallreq_for_mul = `NoStop;
+            mul_opdata1_o = `ZeroWord;
+            mul_opdata2_o = `ZeroWord;
+            mul_start_o = `DivStop;
+            signed_mul_o = 1'b0;
+        end
+        else begin
+            stallreq_for_mul = `NoStop;
+            mul_opdata1_o = `ZeroWord;
+            mul_opdata2_o = `ZeroWord;
+            mul_start_o = `DivStop;
+            signed_mul_o = 1'b0;
+            case ({inst_mul,inst_mulu})
+                2'b10:begin
+                    if (mul_ready_i == `DivResultNotReady) begin
+                        mul_opdata1_o = rf_rdata1;
+                        mul_opdata2_o = rf_rdata2;
+                        mul_start_o = `DivStart;
+                        signed_mul_o = 1'b1;
+                        stallreq_for_mul = `Stop;
+                    end
+                    else if (mul_ready_i == `DivResultReady) begin
+                        mul_opdata1_o = rf_rdata1;
+                        mul_opdata2_o = rf_rdata2;
+                        mul_start_o = `DivStop;
+                        signed_mul_o = 1'b1;
+                        stallreq_for_mul = `NoStop;
+                    end
+                    else begin
+                        mul_opdata1_o = `ZeroWord;
+                        mul_opdata2_o = `ZeroWord;
+                        mul_start_o = `DivStop;
+                        signed_mul_o = 1'b0;
+                        stallreq_for_mul = `NoStop;
+                    end
+                end
+                2'b01:begin
+                    if (mul_ready_i == `DivResultNotReady) begin
+                        mul_opdata1_o = rf_rdata1;
+                        mul_opdata2_o = rf_rdata2;
+                        mul_start_o = `DivStart;
+                        signed_mul_o = 1'b0;
+                        stallreq_for_mul = `Stop;
+                    end
+                    else if (mul_ready_i == `DivResultReady) begin
+                        mul_opdata1_o = rf_rdata1;
+                        mul_opdata2_o = rf_rdata2;
+                        mul_start_o = `DivStop;
+                        signed_mul_o = 1'b0;
+                        stallreq_for_mul = `NoStop;
+                    end
+                    else begin
+                        mul_opdata1_o = `ZeroWord;
+                        mul_opdata2_o = `ZeroWord;
+                        mul_start_o = `DivStop;
+                        signed_mul_o = 1'b0;
+                        stallreq_for_mul = `NoStop;
+                    end
+                end
+                default:begin
+                end
+            endcase
+        end
+    end
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     // DIV part
     wire [63:0] div_result;
@@ -185,7 +276,7 @@ module EX(
     assign {inst_div,inst_divu} = div_divu;
     ///
     reg stallreq_for_div;
-    assign stallreq_for_ex = stallreq_for_div;
+    assign stallreq_for_ex = stallreq_for_div|stallreq_for_mul;
 
     reg [31:0] div_opdata1_o;
     reg [31:0] div_opdata2_o;
@@ -275,8 +366,8 @@ module EX(
 
     ////////
 
-    assign hilo_data =  (hilo_we & (inst[5:1]===5'b01101))? div_result:
-                        (hilo_we & (inst[5:1]===5'b01100))? mul_result:
+    assign hilo_data =  (hilo_we & (inst[5:1]==5'b01101))? div_result:
+                        (hilo_we & (inst[5:1]==5'b01100))? mul_result:
                         hilo_write[0]? {32'b0,rf_rdata1}:
                         hilo_write[1]? {rf_rdata1,32'b0} : 64'b0 ;
 

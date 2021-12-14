@@ -1,5 +1,5 @@
 `define IF_TO_ID_WD 33
-`define ID_TO_EX_WD 172
+`define ID_TO_EX_WD 174
 `define EX_TO_MEM_WD 87
 `define MEM_TO_WB_WD 70
 `define BR_WD 33

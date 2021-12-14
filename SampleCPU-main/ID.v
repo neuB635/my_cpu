@@ -444,6 +444,7 @@ module ID(
     wire [1:0] hilo_write;
     wire signed_mul_i;//是否为有符号乘法运算，1为有符号
     wire [1:0]div_divu;
+    wire [1:0]mul_mulu;
     // read from hi lo
     assign hilo_read = {inst_mfhi,inst_mflo};
     
@@ -453,10 +454,12 @@ module ID(
     
     assign signed_mul_i = inst_mult;
     assign div_divu = {inst_div,inst_divu};
+    assign mul_mulu = {inst_mult,inst_multu};
 
     /////
 
     assign id_to_ex_bus = {
+        mul_mulu,
         lb_lh_lw,       //171:168
         signed_mul_i,   //167
         stop_div_mul,   //166

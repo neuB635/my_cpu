@@ -1,19 +1,492 @@
+`include "..\defines.vh"
 module mul (
-  input wire clk,
-  input wire resetn,
-  input wire mul_signed, //signed is 1, unsigned is 0
-  input wire [31:0] ina,
-  input wire [31:0] inb,
-  output wire signed [63:0] result
+    input wire clk,
+    input wire resetn,
+    input wire mul_signed, //signed is 1, unsigned is 0
+    input wire [31:0] ina,
+    input wire [31:0] inb,
+    input wire start_i,
+    output reg signed [63:0] result,
+    output reg ready_o
 
 );
 `define Signed 1'b1
 `define UnSigned 1'b0
 
+reg [63:0] my_result;
+reg [63:0] add_;
+reg [31:0] ex_ina;
+reg [31:0] ex_inb;
+reg reverse;
+//移位乘法器
+/*
+integer index;
+always @ (*) begin
+    if (!resetn) begin
+        my_result=64'b0;
+        add_=64'b0;
+        ex_ina=32'b0;
+        ex_inb=32'b0;
+        reverse=0;
+    end
+    else begin
+        if (mul_signed==`UnSigned) begin
+            ex_ina=ina;
+            ex_inb=inb;
+            reverse=1'b0;
+        end 
+        else begin
+            ex_ina=ina;
+            ex_inb=inb;
+            if(ina[31]==1'b1) begin
+                ex_ina=~(ina-1);
+            end
+            if (inb[31]==1'b1) begin
+                ex_inb=~(inb-1);
+            end
+            reverse=ina[31]+inb[31];
+        end
+        add_ <= { {32{1'b0}}, ex_inb };
+        for(index = 0;index <32 ; index = index + 1 )begin
 
-  reg [31:0] ex_ina;
-  reg [31:0] ex_inb;
-  reg reverse;
+             my_result <= my_result + ({ 64{ex_ina[index]}} & (add_ << index));
+         end
+        // my_result=64'b0;
+      //   for(i=1;i<33;i=i+1) begin
+
+      // // add_= (~ex_inb[i])?64'b0:{'b0,ex_ina[31:0],'b0};
+
+      //       add_= (ex_inb[i])?(ex_ina<<(i-1)):0;
+      //       my_result = my_result+add_;
+      //   end
+    end
+end
+assign result=reverse?~(my_result)+1'b1:my_result;
+//移位乘法器之前的实现不正确
+*/
+//单周期移位乘法器
+/*
+reg [63:0] pv;
+reg [63:0] ap;
+reg [63:0] plus;
+reg [62:0] move_ap;
+//reg rset;
+//integer index;
+reg [4:0] count;
+always @ (posedge clk) begin
+    if (!resetn) begin
+        add_=64'b0;
+        ex_ina=32'b0;
+        ex_inb=32'b0;
+        reverse=0;
+        count=5'b0;
+        ready_o=1'b0;
+        //rset=1'b0;
+    end
+    else begin
+        if (mul_signed==`UnSigned) begin
+            ex_ina=ina;
+            ex_inb=inb;
+            reverse=1'b0;
+        end 
+        else begin
+            ex_ina=ina;
+            ex_inb=inb;
+            if(ina[31]==1'b1) begin
+                ex_ina=~(ina-1);
+            end
+            if (inb[31]==1'b1) begin
+                ex_inb=~(inb-1);
+            end
+            reverse=ina[31]+inb[31];
+        end
+
+        // if (start_i == 1'b0)begin
+        //     //rset=1'b0;
+        // end
+        // else begin
+            case(count)
+            5'd0:begin
+              if (start_i==1'b1)begin
+                pv=64'b0;
+                ap={32'b0,ex_ina};
+                if(ex_inb[0]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                end else begin
+                  plus=pv;
+                end
+                count=5'd1;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+              end   
+            end
+
+            5'd1:begin
+                if(ex_inb[1]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd2;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd2:begin
+                if(ex_inb[2]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd3;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd3:begin
+                if(ex_inb[3]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd4;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd4:begin
+                if(ex_inb[4]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd5;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd5:begin
+                if(ex_inb[5]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd6;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd6:begin
+                if(ex_inb[6]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd7;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd7:begin
+                if(ex_inb[7]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd8;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd8:begin
+                if(ex_inb[8]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd9;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd9:begin
+                if(ex_inb[9]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd10;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd10:begin
+                if(ex_inb[10]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd11;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd11:begin
+                if(ex_inb[11]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd12;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd12:begin
+                if(ex_inb[12]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd13;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd13:begin
+                if(ex_inb[13]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd14;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd14:begin
+                if(ex_inb[14]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd15;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd15:begin
+                if(ex_inb[15]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd16;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd16:begin
+                if(ex_inb[16]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd17;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd17:begin
+                if(ex_inb[17]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd18;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd18:begin
+                if(ex_inb[18]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd19;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd19:begin
+                if(ex_inb[19]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd20;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd20:begin
+                if(ex_inb[20]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd21;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd21:begin
+                if(ex_inb[21]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd22;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd22:begin
+                if(ex_inb[22]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd23;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd23:begin
+                if(ex_inb[23]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd24;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd24:begin
+                if(ex_inb[24]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd25;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd25:begin
+                if(ex_inb[25]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd26;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd26:begin
+                if(ex_inb[26]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd27;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd27:begin
+                if(ex_inb[27]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd28;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd28:begin
+                if(ex_inb[28]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd29;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd29:begin
+                if(ex_inb[29]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd30;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd30:begin
+                if(ex_inb[30]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                end
+                count=5'd31;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+            end
+            5'd31:begin
+                if(ex_inb[31]==1) begin
+                    plus=pv+ap;
+                    pv=plus;
+                    
+                    //rset=1'b1;
+                end
+                count=5'd0;
+                move_ap=ap[62:0];
+                ap={move_ap,1'b0};
+                ready_o = 1'b1;
+            end
+            default: begin
+            end
+            endcase
+        // end
+
+             
+             
+             
+             
+             
+             
+             
+             
+             
+             
+             
+             
+             
+             
+
+        // for(index = 0;index <32 ; index = index + 1 )begin
+        //     if(ex_inb[index]==1) begin
+        //       //ap={ap[62:0],32{1'b0}};
+        //       pv=pv+ap;
+        //       //ap=ap<<1;
+        //       ap={ap[62:0],1'b0};
+        //     end 
+        //     else begin
+        //       //ap=ap<<1;
+        //       ap={ap[62:0],1'b0};
+        //     end
+        // end
+    end
+end
+assign result = reverse?~(pv)+1'b1:pv;
+        */
+//单周期移位乘法器
+             
+
+
+
+
+
+
+
+
+
+
+
+
+
+//移位乘法器
+//加法树的乘法器
 
   reg [62 :0] temp0;
   reg [61 :0] temp1;
@@ -48,39 +521,43 @@ module mul (
   reg [32 :0] temp30;
   reg [31 :0] temp31;
 
-  wire [63:0] out1_0;
-  wire [61:0] out1_1;
-  wire [59:0] out1_2;
-  wire [57:0] out1_3;
-  wire [55:0] out1_4;
-  wire [53:0] out1_5;
-  wire [51:0] out1_6;
-  wire [49:0] out1_7;
-  wire [47:0] out1_8;
-  wire [45:0] out1_9;
-  wire [43:0] out1_10;
-  wire [41:0] out1_11;
-  wire [39:0] out1_12;
-  wire [37:0] out1_13;
-  wire [35:0] out1_14;
-  wire [33:0] out1_15;
+  reg [63:0] out1_0;//
+  reg [61:0] out1_1;
+  reg [59:0] out1_2;
+  reg [57:0] out1_3;
+  reg [55:0] out1_4;
+  reg [53:0] out1_5;
+  reg [51:0] out1_6;
+  reg [49:0] out1_7;
+  reg [47:0] out1_8;
+  reg [45:0] out1_9;
+  reg [43:0] out1_10;
+  reg [41:0] out1_11;
+  reg [39:0] out1_12;
+  reg [37:0] out1_13;
+  reg [35:0] out1_14;
+  reg [33:0] out1_15;
 
-  wire [63:0] out2_0;
-	wire [59:0] out2_1;
-	wire [55:0] out2_2;
-	wire [51:0] out2_3;
-	wire [47:0] out2_4;
-	wire [43:0] out2_5;
-	wire [39:0] out2_6;
-	wire [35:0] out2_7;
+  reg [63:0] out2_0;
+	reg [59:0] out2_1;
+	reg [55:0] out2_2;
+	reg [51:0] out2_3;
+	reg [47:0] out2_4;
+	reg [43:0] out2_5;
+	reg [39:0] out2_6;
+	reg [35:0] out2_7;
 
-  wire [63:0] out3_0;
-	wire [55:0] out3_1;
-	wire [47:0] out3_2;
-	wire [39:0] out3_3;
+  reg [63:0] out3_0;
+	reg [55:0] out3_1;
+	reg [47:0] out3_2;
+	reg [39:0] out3_3;
 
-  wire [63:0] out4_0;
-	wire [47:0] out4_1;
+  reg [63:0] out4_0;
+	reg [47:0] out4_1;
+
+    reg [63:0]final_result;
+
+  reg [2:0] count; 
     
   // 32*1乘法器
 
@@ -93,128 +570,177 @@ module mul (
   end
   endfunction
 
-  always @ (*) begin
+  always @ (posedge clk) begin
     if (!resetn) begin
-      temp0=63'b0;
-      temp1=62'b0;
-      temp2=61'b0;
-      temp3=60'b0;
-      temp4=59'b0;
-      temp5=58'b0;
-      temp6=57'b0;
-      temp7=56'b0;
-      temp8=55'b0;
-      temp9=54'b0;
-      temp10=53'b0;
-      temp11=52'b0;
-      temp12=51'b0;
-      temp13=50'b0;
-      temp14=49'b0;
-      temp15=48'b0;
-      temp16=47'b0;
-      temp17=46'b0;
-      temp18=45'b0;
-      temp19=44'b0;
-      temp20=43'b0;
-      temp21=42'b0;
-      temp22=41'b0;
-      temp23=40'b0;
-      temp24=39'b0;
-      temp25=38'b0;
-      temp26=37'b0;
-      temp27=36'b0;
-      temp28=35'b0;
-      temp29=34'b0;
-      temp30=33'b0;
-      temp31=32'b0;
+      count<=3'b0;
+      ready_o <= `DivResultNotReady;
+      temp0<=63'b0;
+      temp1<=62'b0;
+      temp2<=61'b0;
+      temp3<=60'b0;
+      temp4<=59'b0;
+      temp5<=58'b0;
+      temp6<=57'b0;
+      temp7<=56'b0;
+      temp8<=55'b0;
+      temp9<=54'b0;
+      temp10<=53'b0;
+      temp11<=52'b0;
+      temp12<=51'b0;
+      temp13<=50'b0;
+      temp14<=49'b0;
+      temp15<=48'b0;
+      temp16<=47'b0;
+      temp17<=46'b0;
+      temp18<=45'b0;
+      temp19<=44'b0;
+      temp20<=43'b0;
+      temp21<=42'b0;
+      temp22<=41'b0;
+      temp23<=40'b0;
+      temp24<=39'b0;
+      temp25<=38'b0;
+      temp26<=37'b0;
+      temp27<=36'b0;
+      temp28<=35'b0;
+      temp29<=34'b0;
+      temp30<=33'b0;
+      temp31<=32'b0;
+
     end
     else begin
-      if (mul_signed==`UnSigned) begin
-        ex_ina=ina;
-        ex_inb=inb;
-        reverse=1'b0;
-      end else begin
-        ex_ina=ina;
-        ex_inb=inb;
-        if(ina[31]==1'b1) begin
-          ex_ina=~(ina-1);
-        end
-        if (inb[31]==1'b1) begin
-          ex_inb=~(inb-1);
-        end
-        reverse=ina[31]+inb[31];
-      end
-      temp31=mut32_1(ex_ina,ex_inb[0]);
-      temp30=mut32_1(ex_ina,ex_inb[1])<<1;
-      temp29=mut32_1(ex_ina,ex_inb[2])<<2;
-      temp28=mut32_1(ex_ina,ex_inb[3])<<3;
-      temp27=mut32_1(ex_ina,ex_inb[4])<<4;
-      temp26=mut32_1(ex_ina,ex_inb[5])<<5;
-      temp25=mut32_1(ex_ina,ex_inb[6])<<6;
-      temp24=mut32_1(ex_ina,ex_inb[7])<<7;
-      temp23=mut32_1(ex_ina,ex_inb[8])<<8;
-      temp22=mut32_1(ex_ina,ex_inb[9])<<9;
-      temp21=mut32_1(ex_ina,ex_inb[10])<<10;
-      temp20=mut32_1(ex_ina,ex_inb[11])<<11;
-      temp19=mut32_1(ex_ina,ex_inb[12])<<12;
-      temp18=mut32_1(ex_ina,ex_inb[13])<<13;
-      temp17=mut32_1(ex_ina,ex_inb[14])<<14;
-      temp16=mut32_1(ex_ina,ex_inb[15])<<15;
-      temp15=mut32_1(ex_ina,ex_inb[16])<<16;
-      temp14=mut32_1(ex_ina,ex_inb[17])<<17;
-      temp13=mut32_1(ex_ina,ex_inb[18])<<18;
-      temp12=mut32_1(ex_ina,ex_inb[19])<<19;
-      temp11=mut32_1(ex_ina,ex_inb[20])<<20;
-      temp10=mut32_1(ex_ina,ex_inb[21])<<21;
-      temp9=mut32_1(ex_ina,ex_inb[22])<<22;
-      temp8=mut32_1(ex_ina,ex_inb[23])<<23;
-      temp7=mut32_1(ex_ina,ex_inb[24])<<24;
-      temp6=mut32_1(ex_ina,ex_inb[25])<<25;
-      temp5=mut32_1(ex_ina,ex_inb[26])<<26;
-      temp4=mut32_1(ex_ina,ex_inb[27])<<27;
-      temp3=mut32_1(ex_ina,ex_inb[28])<<28;
-      temp2=mut32_1(ex_ina,ex_inb[29])<<29;
-      temp1=mut32_1(ex_ina,ex_inb[30])<<30;
-      temp0=mut32_1(ex_ina,ex_inb[31])<<31;
-    end
-  end
+        case (count)
+            3'd0:begin
+                if(start_i==1'b1)begin
+                    if (mul_signed==`UnSigned) begin
+                        ex_ina<=ina;
+                        ex_inb<=inb;
+                        reverse<=1'b0;
+                    end else begin
+                        ex_ina<=ina;
+                        ex_inb<=inb;
+                        if(ina[31]==1'b1) begin
+                        ex_ina<=~(ina-1);
+                        end
+                        if (inb[31]==1'b1) begin
+                        ex_inb<=~(inb-1);
+                        end
+                        reverse<=ina[31]+inb[31];
+                    end
+                    count<=3'd1;
+                    
+                end
+                else begin
+                  ready_o <= `DivResultNotReady;
+                  result <= 64'b0;
+                end
+            end
+            3'd1:begin
+                temp31<=mut32_1(ex_ina,ex_inb[0]);
+                temp30<=mut32_1(ex_ina,ex_inb[1])<<1;
+                temp29<=mut32_1(ex_ina,ex_inb[2])<<2;
+                temp28<=mut32_1(ex_ina,ex_inb[3])<<3;
+                temp27<=mut32_1(ex_ina,ex_inb[4])<<4;
+                temp26<=mut32_1(ex_ina,ex_inb[5])<<5;
+                temp25<=mut32_1(ex_ina,ex_inb[6])<<6;
+                temp24<=mut32_1(ex_ina,ex_inb[7])<<7;
+                temp23<=mut32_1(ex_ina,ex_inb[8])<<8;
+                temp22<=mut32_1(ex_ina,ex_inb[9])<<9;
+                temp21<=mut32_1(ex_ina,ex_inb[10])<<10;
+                temp20<=mut32_1(ex_ina,ex_inb[11])<<11;
+                temp19<=mut32_1(ex_ina,ex_inb[12])<<12;
+                temp18<=mut32_1(ex_ina,ex_inb[13])<<13;
+                temp17<=mut32_1(ex_ina,ex_inb[14])<<14;
+                temp16<=mut32_1(ex_ina,ex_inb[15])<<15;
+                temp15<=mut32_1(ex_ina,ex_inb[16])<<16;
+                temp14<=mut32_1(ex_ina,ex_inb[17])<<17;
+                temp13<=mut32_1(ex_ina,ex_inb[18])<<18;
+                temp12<=mut32_1(ex_ina,ex_inb[19])<<19;
+                temp11<=mut32_1(ex_ina,ex_inb[20])<<20;
+                temp10<=mut32_1(ex_ina,ex_inb[21])<<21;
+                temp9<=mut32_1(ex_ina,ex_inb[22])<<22;
+                temp8<=mut32_1(ex_ina,ex_inb[23])<<23;
+                temp7<=mut32_1(ex_ina,ex_inb[24])<<24;
+                temp6<=mut32_1(ex_ina,ex_inb[25])<<25;
+                temp5<=mut32_1(ex_ina,ex_inb[26])<<26;
+                temp4<=mut32_1(ex_ina,ex_inb[27])<<27;
+                temp3<=mut32_1(ex_ina,ex_inb[28])<<28;
+                temp2<=mut32_1(ex_ina,ex_inb[29])<<29;
+                temp1<=mut32_1(ex_ina,ex_inb[30])<<30;
+                temp0<=mut32_1(ex_ina,ex_inb[31])<<31;
+                count<=3'd2;
+                // ready_o<=1'b0;
+            end
+            3'd2:begin
+                out1_0  <= temp0+temp1;
+                out1_1  <= temp2+temp3;
+                out1_2  <= temp4+temp5;
+                out1_3  <= temp6+temp7;
+                out1_4  <= temp8+temp9;
+                out1_5  <= temp10+temp11;
+                out1_6  <= temp12+temp13;
+                out1_7  <= temp14+temp15;
+                out1_8  <= temp16+temp17;
+                out1_9  <= temp18+temp19;
+                out1_10  <= temp20+temp21;
+                out1_11  <= temp22+temp23;
+                out1_12  <= temp24+temp25;
+                out1_13  <= temp26+temp27;
+                out1_14  <= temp28+temp29;
+                out1_15  <= temp30+temp31;
+                count<=3'd3;
+                // ready_o<=1'b0;
+            end
+            3'd3:begin
+                out2_0  <= out1_0+out1_1;
+                out2_1  <= out1_2+out1_3;
+                out2_2  <= out1_4+out1_5;
+                out2_3  <= out1_6+out1_7;
+                out2_4  <= out1_8+out1_9;
+                out2_5  <= out1_10+out1_11;
+                out2_6  <= out1_12+out1_13;
+                out2_7  <= out1_14+out1_15;
+                count<=3'd4;
+                // ready_o<=1'b0;
+            end
+            3'd4:begin
+                out3_0 <= out2_0+out2_1;
+                out3_1 <= out2_2+out2_3;
+                out3_2 <= out2_4+out2_5;
+                out3_3 <= out2_6+out2_7;
+                count <= 3'd5;
+                // ready_o<=1'b0;
+            end
+            3'd5:begin
+                out4_0 <= out3_0+out3_1;
+	            out4_1 <= out3_2+out3_3;
+                count<=3'd6;
+                // ready_o<=1'b0;
+            end
+            3'd6:begin
+                final_result<=out4_0+out4_1;
+                count<=3'd7;
+                // ready_o<=1'b0;
+            end
+            3'd7:begin
+                result<=reverse?~(final_result)+1'b1:final_result;
+                // count<=3'd0;
+                ready_o <= `DivResultReady;
 
-  assign out1_0 = temp0+temp1;
-	assign out1_1 = temp2+temp3;
-	assign out1_2 = temp4+temp5;
-	assign out1_3 = temp6+temp7;
-	assign out1_4 = temp8+temp9;
-	assign out1_5 = temp10+temp11;
-	assign out1_6 = temp12+temp13;
-	assign out1_7 = temp14+temp15;
-	assign out1_8 = temp16+temp17;
-	assign out1_9 = temp18+temp19;
-	assign out1_10 = temp20+temp21;
-	assign out1_11 = temp22+temp23;
-	assign out1_12 = temp24+temp25;
-	assign out1_13 = temp26+temp27;
-	assign out1_14 = temp28+temp29;
-	assign out1_15 = temp30+temp31;
+                if (start_i == `DivStop) begin
+                    count <= 3'b0;
+                    ready_o <= `DivResultNotReady;
+                    result <= {`ZeroWord,`ZeroWord};
+                end
 
-  assign out2_0 = out1_0+out1_1;
-	assign out2_1 = out1_2+out1_3;
-	assign out2_2 = out1_4+out1_5;
-	assign out2_3 = out1_6+out1_7;
-	assign out2_4 = out1_8+out1_9;
-	assign out2_5 = out1_10+out1_11;
-	assign out2_6 = out1_12+out1_13;
-	assign out2_7 = out1_14+out1_15;
+            end
+        endcase 
+    end        
+end
 
-  assign out3_0 = out2_0+out2_1;
-	assign out3_1 = out2_2+out2_3;
-	assign out3_2 = out2_4+out2_5;
-	assign out3_3 = out2_6+out2_7;
 
-  assign out4_0 = out3_0+out3_1;
-	assign out4_1 = out3_2+out3_3;
 
-  assign result=reverse?~(out4_0+out4_1)+1'b1:out4_0+out4_1;
-
+//加法树的乘法器
 
 //原来代码开始
 /*
