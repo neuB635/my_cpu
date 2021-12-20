@@ -1,21 +1,17 @@
 `include "lib/defines.vh"
 module EX(
-    input wire clk,
-    input wire rst,
+    input wire clk,//传入时钟周期
+    input wire rst,//复位信号，负责初始化各项数据
+    input wire [`StallBus-1:0] stall,//停止信号，负责暂停流水线
+    input wire [`ID_TO_EX_WD-1:0] id_to_ex_bus,//ID段到EX段的总线
+    output wire [`EX_TO_MEM_WD-1:0] ex_to_mem_bus,//EX段到MEM段的总线
+    output wire data_sram_en,//是否对内存有操作
+    output wire [3:0] data_sram_wen,//写入内存的使能
+    output wire [31:0] data_sram_addr,//写入的内存的地址
+    output wire [31:0] data_sram_wdata,//写入内存的数据
+    output wire [`EX_TO_RF_BUS-1:0] ex_to_rf_bus,//EX段到ID段的总线
+    output wire stallreq_for_ex // 判断是否需要暂停（乘法，除法）
     // input wire flush,
-    input wire [`StallBus-1:0] stall,
-
-    input wire [`ID_TO_EX_WD-1:0] id_to_ex_bus,
-
-    output wire [`EX_TO_MEM_WD-1:0] ex_to_mem_bus,
-
-    output wire data_sram_en,
-    output wire [3:0] data_sram_wen,
-    output wire [31:0] data_sram_addr,
-    output wire [31:0] data_sram_wdata,
-    output wire [`EX_TO_RF_BUS-1:0] ex_to_rf_bus,//Siri
-    output wire stallreq_for_ex
-    
 );
 
     reg [`ID_TO_EX_WD-1:0] id_to_ex_bus_r;
@@ -111,7 +107,7 @@ module EX(
     //                        };
 
     wire [4:0] new_lb_lw_lh;
-    assign new_lb_lw_lh =    (lb_lh_lw == 4'b1111)?5'b1_1111:
+    assign new_lb_lw_lh =    ( lb_lh_lw == 4'b1111)?5'b1_1111:
                              ((lb_lh_lw == 4'b0011)&(data_sram_addr[1:0]==2'b00))?5'b1_1100:
                              ((lb_lh_lw == 4'b0011)&(data_sram_addr[1:0]==2'b10))?5'b1_0011:
                              ((lb_lh_lw == 4'b0001)&(data_sram_addr[1:0]==2'b00))?5'b1_1000:
@@ -140,19 +136,24 @@ module EX(
 
     wire [31:0] alu_src1, alu_src2;
     wire [31:0] alu_result, ex_result;
+    wire [2:0] lsa_data;
+    assign lsa_data = inst[7:6] + 1'b1;
+
+   
 
     assign alu_src1 = sel_alu_src1[1] ? ex_pc :
-                      sel_alu_src1[2] ? sa_zero_extend : rf_rdata1;
+                      sel_alu_src1[2] ? sa_zero_extend : 
+                      (inst[31:26] == 6'b011100)? rf_rdata1 << lsa_data :rf_rdata1;
 
     assign alu_src2 = sel_alu_src2[1] ? imm_sign_extend :
                       sel_alu_src2[2] ? 32'h8 :
                       sel_alu_src2[3] ? imm_zero_extend : rf_rdata2;
     
     alu u_alu(
-    	.alu_control (alu_op ),
-        .alu_src1    (alu_src1    ),
-        .alu_src2    (alu_src2    ),
-        .alu_result  (alu_result  )
+    	.alu_control (alu_op ), // 进行哪种运算
+        .alu_src1    (alu_src1    ),// 第一个操作数
+        .alu_src2    (alu_src2    ),// 第二个操作数
+        .alu_result  (alu_result  ) // 计算结果
     );
 ///////
     wire [63:0]hilo_data;
@@ -179,13 +180,13 @@ module EX(
     reg signed_mul_o;
      reg stallreq_for_mul;
     mul u_mul(
-    	.clk        (clk            ),
-        .resetn     (~rst           ),
-        .mul_signed (signed_mul_o     ),
+    	.clk        (clk            ), //时钟
+        .resetn     (~rst           ), //复位信号
+        .mul_signed (signed_mul_o     ),//是否是有符号的乘法
         .ina        (mul_opdata1_o      ), // 乘法源操作数1
         .inb        (mul_opdata2_o      ), // 乘法源操作数2
-        .start_i    (mul_start_o  ),
-        .ready_o    (mul_ready_i    ),
+        .start_i    (mul_start_o  ),//乘法开始信号
+        .ready_o    (mul_ready_i    ),//乘法结束信号
         .result     (mul_result     ) // 乘法结果 64bit
     );
     always @ (*) begin
@@ -283,15 +284,15 @@ module EX(
     reg div_start_o;
     reg signed_div_o;
    div u_div(
-    	.rst          (rst          ),
-        .clk          (clk          ),
-        .signed_div_i (signed_div_o ),
-        .opdata1_i    (div_opdata1_o    ),
-        .opdata2_i    (div_opdata2_o    ),
-        .start_i      (div_start_o      ),
-        .annul_i      (1'b0      ),
+    	.rst          (rst          ),//复位
+        .clk          (clk          ),//时钟
+        .signed_div_i (signed_div_o ),//是否为有符号除法运算
+        .opdata1_i    (div_opdata1_o    ),//被除数
+        .opdata2_i    (div_opdata2_o    ),//除数
+        .start_i      (div_start_o      ),//是否开始除法运算
+        .annul_i      (1'b0      ),//是否取消除法运算
         .result_o     (div_result     ), // 除法结果 64bit
-        .ready_o      (div_ready_i      )
+        .ready_o      (div_ready_i      )//除法运算是否结束
     );
 
     always @ (*) begin
@@ -372,12 +373,12 @@ module EX(
                         hilo_write[1]? {rf_rdata1,32'b0} : 64'b0 ;
 
     hilo u_hilo(
-    	.clk        (clk            ),
-        .rst        (rst            ),
-        .we         (hilo_we        ),  //in
-        .hilo_data  (hilo_data      ),  //in
-        .hi         (hi             ),  //out
-        .lo         (lo             )   //out
+    	.clk        (clk            ),//传入时钟周期
+        .rst        (rst            ),//复位信号，负责初始化各项数据
+        .we         (hilo_we        ),//是否写入hilo寄存器
+        .hilo_data  (hilo_data      ),//写入hilo寄存器的地址
+        .hi         (hi             ),//写入hi寄存器的数据
+        .lo         (lo             ) //写入lo寄存器的数据
     ); 
     ///////
     assign ex_result = data_sram_en ?data_sram_wdata: hilo_read[1]?hi: hilo_read[0]?lo:alu_result;

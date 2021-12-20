@@ -2,30 +2,20 @@
 module ID(
     //这个覆盖了书中ID段和ID/EX段
 
-    input wire clk,
-    input wire rst,
-    // input wire flush,
-    input wire [`StallBus-1:0] stall,
-    
-    output wire stallreq,
-
-    input wire [`IF_TO_ID_WD-1:0] if_to_id_bus,
-
-    input wire [31:0] inst_sram_rdata,
-
-    input wire [`WB_TO_RF_WD-1:0] wb_to_rf_bus,
-
-    input wire [`EX_TO_RF_BUS-1:0] ex_to_rf_bus,//Siri
-
-    input wire [`WB_TO_RF_WD-1:0] mem_to_rf_bus,//Siri
-
-
-    output wire [`ID_TO_EX_WD-1:0] id_to_ex_bus,
-
-    output wire [`BR_WD-1:0] br_bus
+    input wire clk, //传入时钟周期
+    input wire rst, //复位信号，负责初始化各项数据
+    input wire [`StallBus-1:0] stall,//停止信号，负责暂停流水线
+    output wire stallreq,  //负责向CTRL模块传递ID是否需要暂停的信号
+    input wire [`IF_TO_ID_WD-1:0] if_to_id_bus, //从IF段获得的总线
+    input wire [31:0] inst_sram_rdata, // 要写入内存的数据
+    input wire [`WB_TO_RF_WD-1:0] wb_to_rf_bus, // 从WB段写回ID段的总线，用来解决数据相关
+    input wire [`EX_TO_RF_BUS-1:0] ex_to_rf_bus,// 从EX段写回ID段的总线，用来解决数据相关
+    input wire [`WB_TO_RF_WD-1:0] mem_to_rf_bus,// 从MEM段写回ID段的总线，用来解决数据相关
+    output wire [`ID_TO_EX_WD-1:0] id_to_ex_bus,// ID段到EX段的总线，将IF段的数据进行打包
+    output wire [`BR_WD-1:0] br_bus  // 传给IF段，用来进行跳转指令
 
     //Siri
-
+    // input wire flush,
 
 );
     
@@ -160,7 +150,8 @@ module ID(
         .waddr  (wb_rf_waddr  ),
         .wdata  (wb_rf_wdata  )
     ); 
-     
+
+     //用来解决数据相关，确保从寄存器中读出的数据是上一步写入的，防止读后写的现象发生
     assign rdata1 = (ce == 1'b0) ? 32'b0 : ((ex_to_rf_we == 1'b1 ) && (ex_to_rf_waddr==rs)) ? 
                         ex_to_rf_wdata :((mem_to_rf_we == 1'b1) && (mem_to_rf_waddr==rs))? mem_to_rf_wdata : rdata1_1 ;
     assign rdata2 = (ce == 1'b0) ? 32'b0 : ((ex_to_rf_we == 1'b1 ) && (ex_to_rf_waddr==rt)) ? 
@@ -182,6 +173,7 @@ module ID(
     wire inst_sllv,inst_sll;//逻辑左移
     wire inst_srav,inst_sra;//算术右移
     wire inst_srlv,inst_srl;//逻辑右移
+    wire inst_lsa;
 
     //分支跳转
     wire inst_bne;//不等跳转
@@ -308,6 +300,8 @@ module ID(
     assign inst_eret    = op_d[6'b01_0000]&inst[25];
     assign inst_mfc0    = op_d[6'b01_0000]&rs_d[5'b0_0000];
     assign inst_mtc0    = op_d[6'b01_0000]&rs_d[5'b0_0100];
+
+    assign inst_lsa = op_d[6'b01_1100]  ;
     //Siri
 
     assign id_pc_plus8 = id_pc+32'h8;
@@ -325,7 +319,8 @@ module ID(
                              inst_lw|inst_sw|
                              inst_jalr|
                              inst_mthi|inst_mtlo|
-                             inst_lb|inst_sb|inst_sh|inst_lh|inst_lbu|inst_lhu;//除了第一行都是新加的
+                             inst_lb|inst_sb|inst_sh|inst_lh|inst_lbu|inst_lhu
+                             |inst_lsa;//除了第一行都是新加的
 
     // pc to reg1
     assign sel_alu_src1[1] = inst_jal|inst_bgezal|inst_bltzal|inst_jalr;
@@ -341,7 +336,8 @@ module ID(
                              inst_div|inst_divu|inst_mult|inst_multu|
                              inst_slt|inst_sltu|inst_sltiu|
                              inst_and|inst_nor|inst_or|inst_xor|inst_sll|
-                             inst_sw|inst_sllv|inst_sra|inst_srav|inst_srl|inst_srlv|inst_sb|inst_sh;
+                             inst_sw|inst_sllv|inst_sra|inst_srav|inst_srl|inst_srlv|inst_sb|inst_sh|
+                             inst_lsa;
     
     // imm_sign_extend to reg2
     assign sel_alu_src2[1] = inst_lui|inst_addiu|
@@ -361,7 +357,7 @@ module ID(
 
 
     assign op_add = inst_addiu|inst_add|inst_addi|inst_addu
-                    |inst_jal|inst_jalr|inst_bgezal|inst_bltzal;
+                    |inst_jal|inst_jalr|inst_bgezal|inst_bltzal|inst_lsa;
     assign op_sub = inst_sub|inst_subu;
     assign op_slt = inst_slt|inst_slti;
     assign op_sltu = inst_sltiu|inst_sltu;
@@ -408,7 +404,8 @@ module ID(
                 |inst_jal|inst_jalr //无条件跳转
                 |inst_lw
                 |inst_mfhi|inst_mflo|
-                inst_lb|inst_lh|inst_lbu|inst_lhu;  
+                inst_lb|inst_lh|inst_lbu|inst_lhu|
+                inst_lsa;  
 
 
     // store in [rd]
@@ -419,7 +416,8 @@ module ID(
                            inst_sra|inst_srav|
                            inst_srl|inst_srlv|
                            inst_jalr|
-                           inst_mfhi|inst_mflo;    
+                           inst_mfhi|inst_mflo|
+                           inst_lsa;    
     // store in [rt] 
     assign sel_rf_dst[1] = inst_ori | inst_lui | inst_addiu|
                            inst_slti|inst_sltiu|inst_andi|inst_ori|inst_xori
@@ -514,6 +512,7 @@ module ID(
                      inst_jr|inst_jalr ?
                      rdata1 :
                      32'b0;
+    //将是否需要跳转及跳转的地址传回IF取指段
     assign br_bus = {
         br_e,//是否执行相等的跳转
         br_addr//跳转位置
@@ -521,6 +520,7 @@ module ID(
 
     //stall相关
     wire load_stop;
+    //判断该指令是否需要暂停
     assign load_stop = (ex_op==6'b10_0011) | (ex_op==6'b10_0000) | (ex_op==6'b10_1011)| (ex_op==6'b10_1001)| (ex_op==6'b10_1000)|
                        (ex_op==6'b10_0001) | (ex_op==6'b10_0100) | (ex_op==6'b10_0101);
     assign stallreq=(load_stop&&(ce==1'b1)&&(ex_to_rf_we==1'b1)&&(ex_to_rf_waddr==rs))?

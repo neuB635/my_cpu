@@ -1,15 +1,13 @@
 `include "lib/defines.vh"
 module MEM(
-    input wire clk,
-    input wire rst,
-    // input wire flush,
-    input wire [`StallBus-1:0] stall,
-
-    input wire [`EX_TO_MEM_WD-1:0] ex_to_mem_bus,
-    input wire [31:0] data_sram_rdata,
-
-    output wire [`MEM_TO_WB_WD-1:0] mem_to_wb_bus,
-    output wire [`MEM_TO_RF_BUS-1:0] mem_to_rf_bus//Siri
+    input wire clk,//传入时钟周期
+    input wire rst,//复位信号，负责初始化各项数据
+    input wire [`StallBus-1:0] stall,//停止信号，负责暂停流水线
+    input wire [`EX_TO_MEM_WD-1:0] ex_to_mem_bus,//EX段到MEM段的总线
+    input wire [31:0] data_sram_rdata,//从内存读入的数据
+    output wire [`MEM_TO_WB_WD-1:0] mem_to_wb_bus,//MEM段到WB段的总线
+    output wire [`MEM_TO_RF_BUS-1:0] mem_to_rf_bus//MEM段到ID段的总线
+     // input wire flush,
 );
 
     reg [`EX_TO_MEM_WD-1:0] ex_to_mem_bus_r;
@@ -31,7 +29,7 @@ module MEM(
         //     pass;
         // end
     end
-
+                                                                        
     wire [31:0] mem_pc;
     wire data_ram_en;
     wire [3:0] data_ram_wen;
