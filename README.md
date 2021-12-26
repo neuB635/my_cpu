@@ -1,4 +1,5 @@
 # CPU设计与实现实验
+[toc]
 ## 实验参与人员：
 *siri-2001* 程思睿
 
@@ -27,7 +28,7 @@ To add 32-bit integers. If an overflow occurs, then trap.
 To add a constant to a 32-bit integer. If overflow occurs, then trap.
 
 **Description**: GPR[rt] <- GPR[rs] + immediate
-#####ADDU
+##### ADDU
 **Format**: ADDU rd, rs, rt
 
 **Purpose**: Add Unsigned Word
@@ -35,7 +36,7 @@ To add a constant to a 32-bit integer. If overflow occurs, then trap.
 To add 32-bit integers.
 
 **Description**: GPR[rd] <- GPR[rs] + GPR[rt]
-#####ADDIU
+##### ADDIU
 **Format**: ADDIU rt, rs, immediate 
 
 **Purpose**: Add Immediate Unsigned Word
@@ -43,7 +44,7 @@ To add 32-bit integers.
 To add a constant to a 32-bit integer.
 
 **Description**: GPR[rt] <- GPR[rs] + immediate
-#####SUB
+##### SUB
 **Format**: SUB rd, rs, rt 
 
 **Purpose**: Subtract Word
@@ -51,7 +52,7 @@ To add a constant to a 32-bit integer.
 To subtract 32-bit integers. If overflow occurs, then trap.
 
 **Description**: GPR[rd] <- GPR[rs] - GPR[rt]
-#####SUBU
+##### SUBU
 **Format**: SUBU rd, rs, rt 
 
 **Purpose**: Subtract Unsigned Word
@@ -59,7 +60,7 @@ To subtract 32-bit integers. If overflow occurs, then trap.
 To subtract 32-bit integers.
 
 **Description**: GPR[rd] <- GPR[rs] - GPR[rt]
-#####SLT
+##### SLT
 **Format**: SLT rd, rs, rt
 
 **Purpose**: Set on Less Than
@@ -67,7 +68,7 @@ To subtract 32-bit integers.
 To record the result of a less-than comparison.
 
 **Description**: GPR[rd] <- (GPR[rs] < GPR[rt])
-#####SLTI
+##### SLTI
 **Format**: SLTI rt, rs, immediate 
 
 **Purpose**: Set on Less Than Immediate
@@ -75,7 +76,7 @@ To record the result of a less-than comparison.
 To record the result of a less-than comparison with a constant.
 
 **Description**: GPR[rt] <- (GPR[rs] < sign_extend(immediate) )
-#####SLTU
+##### SLTU
 **Format**: SLTU rd, rs, rt
 
 **Purpose**: Set on Less Than Unsigned
@@ -83,7 +84,7 @@ To record the result of a less-than comparison with a constant.
 To record the result of an unsigned less-than comparison.
 
 **Description**: GPR[rd] <- (GPR[rs] < GPR[rt])
-#####SLTIU
+##### SLTIU
 **Format**: SLTIU rt, rs, immediate
 
 **Purpose**: Set on Less Than Immediate Unsigned
@@ -91,7 +92,7 @@ To record the result of an unsigned less-than comparison.
 To record the result of an unsigned less-than comparison with a constant.
 
 **Description**: GPR[rt] <- (GPR[rs] < sign_extend(immediate))
-#####DIV
+##### DIV
 **Format**: DIV rs, rt
 
 **Purpose**: Divide Word
@@ -99,7 +100,7 @@ To record the result of an unsigned less-than comparison with a constant.
 To divide a 32-bit signed integers.
 
 **Description**: (HI, LO) <- GPR[rs] / GPR[rt]
-#####DIVU
+##### DIVU
 **Format**: DIVU rs, rt
 
 **Purpose**: Divide Unsigned Word
@@ -107,7 +108,7 @@ To divide a 32-bit signed integers.
 To divide 32-bit unsigned integers
 
 **Description**: (HI, LO) <- GPR[rs] / GPR[rt]
-#####MULT
+##### MULT
 **Format**: MULT rs, rt 
 
 **Purpose**: Multiply Word
@@ -115,7 +116,7 @@ To divide 32-bit unsigned integers
 To multiply 32-bit signed integers.
 
 **Description**: (HI, LO) <- GPR[rs] x GPR[rt]
-#####MULTU
+##### MULTU
 **Format**: MULTU rs, rt 
 
 **Purpose**: Multiply Unsigned Word
@@ -124,7 +125,7 @@ To multiply 32-bit unsigned integers.
 
 **Description**: (HI, LO) <- GPR[rs] x GPR[rt]
 #### 逻辑运算指令 8 条 
-#####AND
+##### AND
 **Format**: AND rd, rs, rt 
 
 **Purpose**: and
@@ -132,7 +133,7 @@ To multiply 32-bit unsigned integers.
 To do a bitwise logical AND.
 
 **Description**: GPR[rd] <- GPR[rs] and GPR[rt]
-#####ANDI
+##### ANDI
 **Format**: ANDI rt, rs, immediate 
 
 **Purpose**: and immediate
@@ -140,7 +141,7 @@ To do a bitwise logical AND.
 To do a bitwise logical AND with a constant
 
 **Description**: GPR[rt] <- GPR[rs] and zero_extend(immediate)
-#####LUI
+##### LUI
 **Format**: LUI rt, immediate 
 
 **Purpose**: Load Upper Immediate
@@ -148,7 +149,7 @@ To do a bitwise logical AND with a constant
 To load a constant into the upper half of a word
 
 **Description**: GPR[rt] <- sign_extend(immediate || 0<sup>16</sup>)
-#####NOR
+##### NOR
 **Format**: NOR rd, rs, rt
 
 **Purpose**: Not Or
@@ -156,7 +157,7 @@ To load a constant into the upper half of a word
 To do a bitwise logical NOT OR.
 
 **Description**: GPR[rd] <- GPR[rs] nor GPR[rt]
-#####OR
+##### OR
 **Format**: OR rd, rs, rt
 
 **Purpose**: Or
@@ -164,7 +165,7 @@ To do a bitwise logical NOT OR.
 To do a bitwise logical OR.
 
 **Description**: GPR[rd] <- GPR[rs] or GPR[rt]
-#####ORI
+##### ORI
 **Format**: ORI rt, rs, immediate 
 
 **Purpose**: Or Immediate
@@ -172,7 +173,7 @@ To do a bitwise logical OR.
 To do a bitwise logical OR with a constant.
 
 **Description**: GPR[rt] <- GPR[rs] or immediate
-#####XOR
+##### XOR
 **Format**: XOR rd, rs, rt 
 
 **Purpose**: Exclusive OR
@@ -180,7 +181,7 @@ To do a bitwise logical OR with a constant.
 To do a bitwise logical Exclusive OR.
 
 **Description**: GPR[rd] <- GPR[rs] XOR GPR[rt]
-#####XORI
+##### XORI
 **Format**: XORI rt, rs, immediate 
 
 **Purpose**: Exclusive OR Immediate
@@ -189,7 +190,7 @@ To do a bitwise logical Exclusive OR with a constant.
 
 **Description**: GPR[rt] <- GPR[rs] XOR immediate
 #### 移位指令 6 条
-#####SLLV
+##### SLLV
 **Format**: SLLV rd, rt, rs
 
 **Purpose**: Shift Word Left Logical Variable
@@ -197,7 +198,7 @@ To do a bitwise logical Exclusive OR with a constant.
 To left-shift a word by a variable number of bits.
 
 **Description**: GPR[rd] <- GPR[rt] << GPR[rs]
-#####SLL
+##### SLL
 **Format**: SLL rd, rt, sa 
 
 **Purpose**: Shift Word Left Logical
@@ -205,7 +206,7 @@ To left-shift a word by a variable number of bits.
 To left-shift a word by a fixed number of bits.
 
 **Description**: GPR[rd] <- GPR[rt] << sa
-#####SRAV
+##### SRAV
 **Format**: SRAV rd, rt, rs
 
 **Purpose**: Shift Word Right Arithmetic Variable
@@ -213,7 +214,7 @@ To left-shift a word by a fixed number of bits.
 To execute an arithmetic right-shift of a word by a variable number of bits.
 
 **Description**: GPR[rd] <- GPR[rt] >> GPR[rs] (arithmetic)
-#####SRA
+##### SRA
 **Format**: SRA rd, rt, sa
 
 **Purpose**: Shift Word Right Arithmetic
@@ -221,7 +222,7 @@ To execute an arithmetic right-shift of a word by a variable number of bits.
 To execute an arithmetic right-shift of a word by a fixed number of bits.
 
 **Description**: GPR[rd] <- GPR[rt] >> sa (arithmetic)
-#####SRLV
+##### SRLV
 **Format**: SRLV rd, rt, rs
 
 **Purpose**: Shift Word Right Logical Variable
@@ -229,7 +230,7 @@ To execute an arithmetic right-shift of a word by a fixed number of bits.
 To execute a logical right-shift of a word by a variable number of bits.
 
 **Description**: GPR[rd] <- GPR[rt] >> GPR[rs] (logical)
-#####SRL
+##### SRL
 **Format**: SRL rd, rt, sa
 
 **Purpose**: Shift Word Right Logical
@@ -238,7 +239,7 @@ To execute a logical right-shift of a word by a fixed number of bits.
 
 **Description**: GPR[rd] <- GPR[rt] >> sa (logical)
 #### 分支跳转指令 12 条 
-#####BEQ
+##### BEQ
 **Format**: BEQ rs, rt, offset 
 
 **Purpose**: Branch on Equal
@@ -246,7 +247,7 @@ To execute a logical right-shift of a word by a fixed number of bits.
 To compare GPRs then do a PC-relative conditional branch.
 
 **Description**: if GPR[rs] = GPR[rt] then branch
-#####BNE
+##### BNE
 **Format**: BNE rs, rt, offset
 
 **Purpose**: Branch on Not Equal
@@ -254,7 +255,7 @@ To compare GPRs then do a PC-relative conditional branch.
 To compare GPRs then do a PC-relative conditional branch
 
 **Description**: if GPR[rs] != GPR[rt] then branch
-#####BGEZ
+##### BGEZ
 **Format**: BGEZ rs, offset 
 
 **Purpose**: Branch on Greater Than or Equal to Zero
@@ -262,7 +263,7 @@ To compare GPRs then do a PC-relative conditional branch
 To test a GPR then do a PC-relative conditional branch
 
 **Description**: if GPR[rs] >= 0 then branch
-#####BGTZ
+##### BGTZ
 **Format**: BGTZ rs, offset 
 
 **Purpose**: Branch on Greater Than Zero 
@@ -270,7 +271,7 @@ To test a GPR then do a PC-relative conditional branch
 To test a GPR then do a PC-relative conditional branch.
 
 **Description**: if GPR[rs] > 0 then branch
-#####BLEZ
+##### BLEZ
 **Format**: BLEZ rs, offset 
 
 **Purpose**: Branch on Less Than or Equal to Zero
@@ -278,7 +279,7 @@ To test a GPR then do a PC-relative conditional branch.
 To test a GPR then do a PC-relative conditional branch.
 
 **Description**: if GPR[rs] <= 0 then branch
-#####BLTZ
+##### BLTZ
 **Format**: BLTZ rs, offset
 
 **Purpose**: Branch on Less Than Zero
@@ -286,7 +287,7 @@ To test a GPR then do a PC-relative conditional branch.
 To test a GPR then do a PC-relative conditional branch.
 
 **Description**: if GPR[rs] < 0 then branch
-#####BGEZAL
+##### BGEZAL
 **Format**: BGEZAL rs, offset
 
 **Purpose**: Branch on Greater Than or Equal to Zero and Link
@@ -294,7 +295,7 @@ To test a GPR then do a PC-relative conditional branch.
 To test a GPR then do a PC-relative conditional procedure call
 
 **Description**: if GPR[rs] >= 0 then procedure_call
-#####BLTZAL
+##### BLTZAL
 **Format**: BLTZAL rs, offset
 
 **Purpose**: Branch on Less Than Zero and Link
@@ -302,19 +303,19 @@ To test a GPR then do a PC-relative conditional procedure call
 To test a GPR then do a PC-relative conditional procedure call.
 
 **Description**: if GPR[rs] < 0 then procedure_call
-#####J
+##### J
 **Format**: J target 
 
 **Purpose**: Jump
 
 To branch within the current 256 MB-aligned region.
-#####JAL
+##### JAL
 **Format**: JAL
 
 **target Purpose**: Jump and Link
 
 To execute a procedure call within the current 256MB-aligned region.
-#####JR
+##### JR
 **Format**: JR rs 
 
 **Purpose**: Jump Register
@@ -322,7 +323,7 @@ To execute a procedure call within the current 256MB-aligned region.
 To execute a branch to an instruction address in a register
 
 **Description**: PC <- GPR[rs]
-#####JALR
+##### JALR
 **Format**: JALR rs (rd = 31 implied) 
 
 JALR rd, rs 
@@ -333,7 +334,7 @@ To execute a procedure call to an instruction address in a register
 
 **Description**: GPR[rd] <- return_addr, PC <- GPR[rs]
 #### 数据移动指令 4 条
-#####MFHI
+##### MFHI
 **Format**: MFHI rd
 
 **Purpose**: Move From HI Register
@@ -341,7 +342,7 @@ To execute a procedure call to an instruction address in a register
 To copy the special purpose HI register to a GPR. 
 
 **Description**: GPR[rd] <- HI
-#####MFLO
+##### MFLO
 **Format**: MFLO rd
 
 **Purpose**: Move From LO Register
@@ -349,7 +350,7 @@ To copy the special purpose HI register to a GPR.
 To copy the special purpose LO register to a GPR. 
 
 **Description**: GPR[rd] <- LO
-#####MTHI
+##### MTHI
 **Format**: MTHI rs 
 
 **Purpose**: Move to HI Register
@@ -357,7 +358,7 @@ To copy the special purpose LO register to a GPR.
 To copy a GPR to the special purpose HI register. 
 
 **Description**: HI <- GPR[rs]
-#####MTLO
+##### MTLO
 **Format**: MTLO rs
 
 **Purpose**: Move to LO Register
@@ -366,7 +367,7 @@ To copy a GPR to the special purpose LO register.
 
 **Description**: LO <- GPR[rs]
 #### 访存指令 8 条 
-#####LB
+##### LB
 **Format**: LB rt, offset(base) 
 
 **Purpose**: Load Byte
@@ -374,7 +375,7 @@ To copy a GPR to the special purpose LO register.
 To load a byte from memory as a signed value.
 
 **Description**: GPR[rt] <- memory[GPR[base] + offset]
-#####LBU
+##### LBU
 **Format**: LBU rt, offset(base) 
 
 **Purpose**: Load Byte Unsigned
@@ -382,7 +383,7 @@ To load a byte from memory as a signed value.
 To load a byte from memory as an unsigned value
 
 **Description**: GPR[rt] <- memory[GPR[base] + offset]
-#####LH
+##### LH
 **Format**: LH rt, offset(base) 
 
 **Purpose**: Load Halfword
@@ -390,7 +391,7 @@ To load a byte from memory as an unsigned value
 To load a halfword from memory as a signed value
 
 **Description**: GPR[rt] <- memory[GPR[base] + offset]
-#####LHU
+##### LHU
 **Format**: LHU rt, offset(base) 
 
 **Purpose**: Load Halfword Unsigned
@@ -398,7 +399,7 @@ To load a halfword from memory as a signed value
 To load a halfword from memory as an unsigned value
 
 **Description**: GPR[rt] <- memory[GPR[base] + offset]
-#####LW
+##### LW
 **Format**: LW rt, offset(base) 
 
 **Purpose**: Load Word
@@ -406,7 +407,7 @@ To load a halfword from memory as an unsigned value
 To load a word from memory as a signed value
 
 **Description**: GPR[rt] <- memory[GPR[base] + offset]
-#####SB
+##### SB
 **Format**: SB rt, offset(base)
 
 **Purpose**: Store Byte
@@ -414,7 +415,7 @@ To load a word from memory as a signed value
 To store a byte to memory.
 
 **Description**: memory[GPR[base]  offset] <- GPR[rt]
-#####SH
+##### SH
 **Format**: SH rt, offset(base) 
 
 **Purpose**: Store Halfword
@@ -422,7 +423,7 @@ To store a byte to memory.
 To store a halfword to memory.
 
 **Description**: memory[GPR[base] + offset] <- GPR[rt]
-#####SW
+##### SW
 **Format**: SW rt, offset(base) 
 
 **Purpose**: Store Word
@@ -446,12 +447,12 @@ ID段负责译码，将IF段传来的指令进行拆分解析。
 EX段负责执行，EX段对经ID段解析的指令进行运算，得到相关的结果
 #### 结构示意图
 ![](img/EX.png)
-###MEM
+### MEM
 #### 整体功能说明
 在MEM段进行对内存数据的读入，通过判断，决定使用的数据是从内存中传入的还是从EX段传入的，并将其传到WB段
 #### 结构示意图
 ![](img/MEM.png)
-###WB
+### WB
 ####整体功能说明
 WB段负责将数据写回，
 #### 结构示意图
